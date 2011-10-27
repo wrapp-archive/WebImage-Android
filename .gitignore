@@ -1,0 +1,7 @@
+*.apk
+*.iws
+gen/*
+bin/*
+out/*
+local.properties
+.DS_Store
