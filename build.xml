@@ -30,7 +30,7 @@
       basedir="build/classes"
       includes="**/*.class"
       manifest="${manifest}">
-      <!--<fileset dir="${src.dir}" />-->
+      <fileset dir="${src.dir}" />
     </jar>
   </target>
 
