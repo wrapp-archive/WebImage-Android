@@ -82,6 +82,8 @@ public class ImageLoader {
   }
 
   public static void load(URL imageUrl, ImageRequest.Listener listener, boolean cacheInMemory) {
+    // TODO: This might be too much work in the GUI thread. Move to a worker?
+
     Queue<ImageRequest> requestQueue = getInstance().pendingRequests;
     synchronized(requestQueue) {
       Iterator requestIterator = requestQueue.iterator();
@@ -120,8 +122,6 @@ public class ImageLoader {
           }
         }
       }
-
-      // TODO: Check running tasks for duplicate jobs
     }
 
     synchronized(requestQueue) {
