@@ -34,7 +34,8 @@ public class ImageLoader {
               requestQueue.wait();
             }
             catch(InterruptedException e) {
-              e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+              // Log, but otherwise ignore. Not a big deal.
+              LogWrapper.logException(e);
             }
           }
 
