@@ -40,10 +40,14 @@ public class WebImageView extends ImageView implements ImageRequest.Listener {
   }
 
   public void onDrawableLoaded(final Drawable drawable) {
-    uiHandler.post(new Runnable() {
+    postToGuiThread(new Runnable() {
       public void run() {
         setImageDrawable(drawable);
       }
     });
+  }
+
+  public void postToGuiThread(Runnable runnable) {
+    uiHandler.post(runnable);
   }
 }
