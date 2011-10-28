@@ -84,13 +84,18 @@ public class ImageLoader {
   public static void load(URL imageUrl, ImageRequest.Listener listener, boolean cacheInMemory) {
     Queue<ImageRequest> requestQueue = getInstance().pendingRequests;
     synchronized(requestQueue) {
-      for(ImageRequest request : requestQueue) {
+      Iterator requestIterator = requestQueue.iterator();
+      while(requestIterator.hasNext()) {
+        ImageRequest request = (ImageRequest)requestIterator.next();
         if(request.listener.equals(listener)) {
           if(request.imageUrl.equals(imageUrl)) {
+            // Ignore duplicate requests. This is common when doing view recycling in list adapters
             return;
           }
           else {
-            // TODO: Check for same request but with different URL
+            // If the listener is the same but the request is for a new URL, remove the previous
+            // request from the pending queue
+            requestIterator.remove();
           }
         }
       }
