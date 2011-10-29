@@ -40,6 +40,22 @@ public class ImageLoader {
           }
 
           request = requestQueue.poll();
+          Iterator requestIterator = requestQueue.iterator();
+          while(requestIterator.hasNext()) {
+            ImageRequest checkRequest = (ImageRequest)requestIterator.next();
+            if(request.listener.equals(checkRequest.listener)) {
+              if(request.imageUrl.equals(checkRequest.imageUrl)) {
+                // Ignore duplicate requests. This is common when doing view recycling in list adapters
+                requestIterator.remove();
+              }
+              else {
+                // If the listener is the same but the request is for a new URL, remove the previous
+                // request from the pending queue
+                request = checkRequest;
+                requestIterator.remove();
+              }
+            }
+          }
         }
 
         processRequest(request);
@@ -85,7 +101,8 @@ public class ImageLoader {
     // TODO: This might be too much work in the GUI thread. Move to a worker?
 
     Queue<ImageRequest> requestQueue = getInstance().pendingRequests;
-    synchronized(requestQueue) {
+/*
+      synchronized(requestQueue) {
       Iterator requestIterator = requestQueue.iterator();
       while(requestIterator.hasNext()) {
         ImageRequest request = (ImageRequest)requestIterator.next();
@@ -101,7 +118,9 @@ public class ImageLoader {
           }
         }
       }
+      */
 
+/*
       final ImageRequest[] runningRequests = getInstance().runningRequests;
       synchronized(runningRequests) {
         for(int i = 0; i < runningRequests.length; i++) {
@@ -123,6 +142,7 @@ public class ImageLoader {
         }
       }
     }
+*/
 
     synchronized(requestQueue) {
       requestQueue.add(new ImageRequest(imageUrl, listener, cacheInMemory));
