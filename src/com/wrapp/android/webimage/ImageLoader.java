@@ -8,7 +8,7 @@ import java.util.LinkedList;
 import java.util.Queue;
 
 public class ImageLoader {
-  private static final int NUM_WORKERS = 2;
+  private static final int NUM_WORKERS = 1;
 
   private static ImageLoader staticInstance;
   private final Queue<ImageRequest> pendingRequests = new LinkedList<ImageRequest>();
