@@ -58,6 +58,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/WebImage.iml" filepath="$PROJECT_DIR$/WebImage.iml" />
+      <module fileurl="file://$PROJECT_DIR$/examples/WebImageExample.iml" filepath="$PROJECT_DIR$/examples/WebImageExample.iml" />
     </modules>
   </component>
   <component name="ProjectResources">
