@@ -13,7 +13,8 @@ public class ImageLoader {
   private static ImageLoader staticInstance;
   private final Queue<ImageRequest> pendingRequests = new LinkedList<ImageRequest>();
   private final Worker[] workerPool = new Worker[NUM_WORKERS];
-  private final ImageRequest[] runningRequests = new ImageRequest[NUM_WORKERS];
+  // TODO: This will be necessary with multiple worker threads
+  // private final ImageRequest[] runningRequests = new ImageRequest[NUM_WORKERS];
 
 
   private static class Worker extends Thread {
@@ -63,9 +64,12 @@ public class ImageLoader {
     }
 
     private void processRequest(ImageRequest request) {
-      final ImageRequest[] runningRequests = getInstance().runningRequests;
-      Drawable drawable;
+      Drawable drawable = ImageCache.loadImage(request);
+      request.listener.onDrawableLoaded(drawable);
 
+      // TODO: Handle running requests queue
+      /*
+      final ImageRequest[] runningRequests = getInstance().runningRequests;
       synchronized(runningRequests) {
         runningRequests[index] = request;
         drawable = ImageCache.loadImage(request);
@@ -79,6 +83,7 @@ public class ImageLoader {
           LogWrapper.logMessage("Interrupted, returning");
         }
       }
+      */
     }
   }
 
