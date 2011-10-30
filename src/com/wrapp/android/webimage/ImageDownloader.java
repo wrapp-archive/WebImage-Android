@@ -40,9 +40,10 @@ public class ImageDownloader {
       LogWrapper.logException(e);
     }
     finally {
-      assert contentInputStream != null;
       try {
-        contentInputStream.close();
+        if(contentInputStream != null) {
+          contentInputStream.close();
+        }
       }
       catch(IOException e) {
         LogWrapper.logException(e);

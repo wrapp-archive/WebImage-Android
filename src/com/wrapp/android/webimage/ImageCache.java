@@ -113,9 +113,10 @@ public class ImageCache {
       LogWrapper.logException(e);
     }
     finally {
-      assert outputStream != null;
       try {
-        outputStream.close();
+        if(outputStream != null) {
+          outputStream.close();
+        }
       }
       catch(IOException e) {
         LogWrapper.logException(e);
