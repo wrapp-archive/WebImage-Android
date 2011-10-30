@@ -46,12 +46,12 @@ public class ImageLoader {
             ImageRequest checkRequest = (ImageRequest)requestIterator.next();
             if(request.listener.equals(checkRequest.listener)) {
               if(request.imageUrl.equals(checkRequest.imageUrl)) {
-                // Ignore duplicate requests. This is common when doing view recycling in list adapters
+                // Ignore duplicate requests. This is common when doing view recycling in list adapters.
                 requestIterator.remove();
               }
               else {
-                // If the listener is the same but the request is for a new URL, remove the previous
-                // request from the pending queue
+                // If this request in the queue was made by the same listener but is for a new URL,
+                // then use that request instead and remove it from the queue.
                 request = checkRequest;
                 requestIterator.remove();
               }
