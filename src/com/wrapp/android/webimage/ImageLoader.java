@@ -156,8 +156,10 @@ public class ImageLoader {
     }
   }
 
-  public static void enableLogging(String tag, int level) {
-    LogWrapper.tag = tag;
-    LogWrapper.level = level;
+  public static void cancelAllRequests() {
+    final Queue<ImageRequest> requestQueue = getInstance().pendingRequests;
+    synchronized(requestQueue) {
+      requestQueue.clear();
+    }
   }
 }

@@ -6,6 +6,11 @@ public class LogWrapper {
   public static int level;
   public static String tag;
 
+  public static void enableLogging(String tag, int level) {
+    LogWrapper.tag = tag;
+    LogWrapper.level = level;
+  }
+
   public static final void logMessage(String message) {
     if(tag != null) {
       Log.println(level, tag, message);
