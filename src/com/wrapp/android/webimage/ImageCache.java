@@ -202,6 +202,13 @@ public class ImageCache {
     '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'
   };
 
+  /**
+   * Calculate a hash key for the given URL, which is used to create safe filenames and
+   * key strings. Internally, this method uses MD5, as that is available on Android 2.1
+   * devices (unlike base64, for example).
+   * @param url Image URL
+   * @return Hash for image URL
+   */
   public static String getKeyForUrl(URL url) {
     String result = "";
 
@@ -217,7 +224,7 @@ public class ImageCache {
       result = hexStringBuilder.toString();
     }
     catch(NoSuchAlgorithmException e) {
-      // Erm, not much to do here LogWrapper.logException(e);
+      LogWrapper.logException(e);
     }
 
     return result;
