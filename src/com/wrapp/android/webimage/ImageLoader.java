@@ -8,22 +8,12 @@ import java.util.LinkedList;
 import java.util.Queue;
 
 public class ImageLoader {
-  private static final int NUM_WORKERS = 1;
-
+  private static final int NUM_WORKERS = 2;
   private static ImageLoader staticInstance;
-  private final Queue<ImageRequest> pendingRequests = new LinkedList<ImageRequest>();
-  private final Worker[] workerPool = new Worker[NUM_WORKERS];
-  // TODO: This will be necessary with multiple worker threads
-  // private final ImageRequest[] runningRequests = new ImageRequest[NUM_WORKERS];
+  private final Queue<ImageRequest> pendingRequests;
 
 
   private static class Worker extends Thread {
-    private int index;
-
-    public Worker(int index) {
-      this.index = index;
-    }
-
     @Override
     public void run() {
       final Queue<ImageRequest> requestQueue = getInstance().pendingRequests;
@@ -96,8 +86,10 @@ public class ImageLoader {
   }
 
   private ImageLoader() {
+    pendingRequests = new LinkedList<ImageRequest>();
+    final Worker[] workerPool = new Worker[NUM_WORKERS];
     for(int i = 0; i < NUM_WORKERS; i++) {
-      workerPool[i] = new Worker(i);
+      workerPool[i] = new Worker();
       workerPool[i].start();
     }
   }
