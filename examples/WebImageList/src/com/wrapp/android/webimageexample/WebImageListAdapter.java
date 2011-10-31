@@ -25,18 +25,15 @@ public class WebImageListAdapter extends BaseAdapter {
   }
 
   public View getView(int i, View convertView, ViewGroup parentViewGroup) {
-    LinearLayout webImageContainerView;
+    WebImageContainerView containerView;
     if(convertView != null) {
-      webImageContainerView = (LinearLayout)convertView;
+      containerView = (WebImageContainerView)convertView;
     }
     else {
-      final Context context = parentViewGroup.getContext();
-      LayoutInflater layoutInflater = (LayoutInflater)context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-      webImageContainerView = (LinearLayout)layoutInflater.inflate(R.layout.web_image_container_view, null);
+      containerView = new WebImageContainerView(parentViewGroup.getContext());
     }
 
-    WebImageView webImageView = (WebImageView)webImageContainerView.findViewById(R.id.WebImageView);
-    webImageView.setImageUrl(getImageUrl(i));
-    return webImageContainerView;
+    containerView.setImageUrl(getImageUrl(i));
+    return containerView;
   }
 }
