@@ -95,55 +95,9 @@ public class ImageLoader {
   }
 
   public static void load(URL imageUrl, ImageRequest.Listener listener, boolean cacheInMemory) {
-    // TODO: This might be too much work in the GUI thread. Move to a worker?
-
     Queue<ImageRequest> requestQueue = getInstance().pendingRequests;
-/*
-      synchronized(requestQueue) {
-      Iterator requestIterator = requestQueue.iterator();
-      while(requestIterator.hasNext()) {
-        ImageRequest request = (ImageRequest)requestIterator.next();
-        if(request.listener.equals(listener)) {
-          if(request.imageUrl.equals(imageUrl)) {
-            // Ignore duplicate requests. This is common when doing view recycling in list adapters
-            return;
-          }
-          else {
-            // If the listener is the same but the request is for a new URL, remove the previous
-            // request from the pending queue
-            requestIterator.remove();
-          }
-        }
-      }
-      */
-
-/*
-      final ImageRequest[] runningRequests = getInstance().runningRequests;
-      synchronized(runningRequests) {
-        for(int i = 0; i < runningRequests.length; i++) {
-          ImageRequest request = runningRequests[i];
-          if(request != null) {
-            if(request.listener.equals(listener)) {
-              if(request.imageUrl.equals(imageUrl)) {
-                // Ignore duplicate requests. This is common when doing view recycling in list adapters
-                return;
-              }
-              else {
-                // Null out the running request in this index. The job will continue running, but when
-                // it returns it will skip notifying the listener and start processing the next job in
-                // the pending request queue.
-                runningRequests[i] = null;
-              }
-            }
-          }
-        }
-      }
-    }
-*/
-
     synchronized(requestQueue) {
       requestQueue.add(new ImageRequest(imageUrl, listener, cacheInMemory));
-      // TODO: Use notifyAll() instead?
       requestQueue.notify();
     }
   }
