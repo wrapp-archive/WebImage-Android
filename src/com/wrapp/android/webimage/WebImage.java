@@ -65,4 +65,14 @@ public class WebImage {
   public static void enableLogging(String tag, int level) {
     LogWrapper.enableLogging(tag, level);
   }
+
+  /**
+   * Override the location used to save images on the SD card. By default, this is on the SD card under
+   * /data/images. Calling this method will save images to /data/com.example.yourapp/subdirectoryName.
+   * @param packageName Package name to use, you probably want Context.getPackageName()
+   * @param subdirectoryName Subdirectory name to use
+   */
+  public static void setCacheDirectory(String packageName, String subdirectoryName) {
+    ImageCache.setCacheDirectory(packageName, subdirectoryName);
+  }
 }
