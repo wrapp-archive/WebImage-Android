@@ -73,7 +73,16 @@ public class ImageCache {
 
   private static Drawable loadImageFromMemoryCache(final String imageKey) {
     if(drawableCache.containsKey(imageKey)) {
-      return drawableCache.get(imageKey).get();
+      // Apparently Android's SoftReference can sometimes free objects too early, see:
+      // http://groups.google.com/group/android-developers/browse_thread/thread/ebabb0dadf38acc1
+      // If that happens then it's no big deal, as this class will simply re-load the image
+      // from file, but if that is the case then we should be polite and remove the imageKey
+      // from the cache to reflect the actual caching state of this image.
+      final Drawable drawable = drawableCache.get(imageKey).get();
+      if(drawable == null) {
+        drawableCache.remove(imageKey);
+      }
+      return drawable;
     }
     else {
       return null;
