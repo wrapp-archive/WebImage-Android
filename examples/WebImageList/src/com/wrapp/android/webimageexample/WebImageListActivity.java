@@ -14,8 +14,8 @@ public class WebImageListActivity extends ListActivity {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.web_image_activity);
 
-    WebImage.enableLogging("WebImageExample", Log.DEBUG);
     WebImage.clearOldCacheFiles(0);
+    WebImage.enableLogging("WebImageList", Log.DEBUG);
 
     WebImageListAdapter listAdapter = new WebImageListAdapter();
     setListAdapter(listAdapter);
