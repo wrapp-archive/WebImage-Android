@@ -6,7 +6,7 @@ import android.widget.BaseAdapter;
 
 public class WebImageListAdapter extends BaseAdapter {
   private static final boolean USE_AWESOME_IMAGES = true;
-  private static final int NUM_IMAGES = 50;
+  private static final int NUM_IMAGES = 100;
   private static final int IMAGE_SIZE = 100;
 
   public int getCount() {
