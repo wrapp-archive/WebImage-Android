@@ -30,7 +30,7 @@
     </content>
     <orderEntry type="jdk" jdkName="Android SDK" jdkType="Android SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="module" module-name="WebImageExample" scope="PROVIDED" />
+    <orderEntry type="module" module-name="WebImageList" scope="PROVIDED" />
   </component>
 </module>
 

@@ -5,7 +5,7 @@ import android.os.Bundle;
 import android.util.Log;
 import com.wrapp.android.webimage.WebImage;
 
-public class WebImageActivity extends ListActivity {
+public class WebImageListActivity extends ListActivity {
   @Override
   public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);

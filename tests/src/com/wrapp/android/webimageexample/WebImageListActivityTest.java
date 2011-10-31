@@ -9,13 +9,13 @@ import android.test.ActivityInstrumentationTestCase2;
  * <p/>
  * To run this test, you can type:
  * adb shell am instrument -w \
- * -e class com.wrapp.android.webimageexample.WebImageActivityTest \
+ * -e class com.wrapp.android.webimageexample.WebImageListActivityTest \
  * com.wrapp.android.webimageexample.tests/android.test.InstrumentationTestRunner
  */
-public class WebImageActivityTest extends ActivityInstrumentationTestCase2<WebImageActivity> {
+public class WebImageListActivityTest extends ActivityInstrumentationTestCase2<WebImageListActivity> {
 
-    public WebImageActivityTest() {
-        super("com.wrapp.android.webimageexample", WebImageActivity.class);
+    public WebImageListActivityTest() {
+        super("com.wrapp.android.webimageexample", WebImageListActivity.class);
     }
 
   public void testName() throws Exception {
