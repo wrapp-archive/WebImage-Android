@@ -5,15 +5,23 @@ import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 
 public class WebImageListAdapter extends BaseAdapter {
+  private static final boolean USE_AWESOME_IMAGES = true;
   private static final int NUM_IMAGES = 50;
+  private static final int IMAGE_SIZE = 100;
 
   public int getCount() {
     return NUM_IMAGES;
   }
 
   private String getImageUrl(int i) {
-    // Unicorns!
-    return "http://unicornify.appspot.com/avatar/" + i + "?s=100";
+    if(USE_AWESOME_IMAGES) {
+      // Unicorns!
+      return "http://unicornify.appspot.com/avatar/" + i + "?s=" + IMAGE_SIZE;
+    }
+    else {
+      // Boring identicons
+      return "http://www.gravatar.com/avatar/" + i + "?s=" + IMAGE_SIZE + "&d=identicon";
+    }
   }
 
   public Object getItem(int i) {
