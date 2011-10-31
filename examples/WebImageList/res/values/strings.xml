@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">WebImageExample</string>
+  <string name="app_name">WebImageList</string>
+  <string name="menu_refresh">Refresh</string>
+  <string name="menu_clear_caches">Clear Caches</string>
 </resources>
