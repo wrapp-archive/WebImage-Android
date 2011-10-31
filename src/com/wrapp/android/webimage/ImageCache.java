@@ -27,19 +27,18 @@ public class ImageCache {
 
     Drawable drawable = loadImageFromMemoryCache(imageKey);
     if(drawable != null) {
-      LogWrapper.logMessage("Found image " + request.imageUrl + " in first-try memory cache, " + drawable.getIntrinsicWidth() + "x" + drawable.getIntrinsicHeight());
+      LogWrapper.logMessage("Found image " + request.imageUrl + " in memory cache");
       return drawable;
     }
 
     drawable = loadImageFromFileCache(imageKey, request.imageUrl);
     if(drawable != null) {
-      LogWrapper.logMessage("Found image " + request.imageUrl + " in file cache, " + drawable.getIntrinsicWidth() + "x" + drawable.getIntrinsicHeight());
+      LogWrapper.logMessage("Found image " + request.imageUrl + " in file cache");
       return drawable;
     }
 
     drawable = ImageDownloader.loadImage(imageKey, request.imageUrl);
     if(drawable != null) {
-      LogWrapper.logMessage("Downloaded image " + request.imageUrl + " from network");
       saveImageInFileCache(imageKey, drawable);
       if(request.cacheInMemory) {
         saveImageInMemoryCache(imageKey, drawable);
@@ -71,18 +70,18 @@ public class ImageCache {
         if(fileAgeInMs > CACHE_RECHECK_AGE_IN_SEC * 1000) {
           Date expirationDate = ImageDownloader.getServerTimestamp(imageUrl);
           if(expirationDate.after(now)) {
-            LogWrapper.logMessage("Cached version of '" + imageUrl.toString() + "' is still current, updating timestamp");
+            LogWrapper.logMessage("Cached version of " + imageUrl.toString() + " is still current, updating timestamp");
             cacheFile.setLastModified(now.getTime());
             drawable = Drawable.createFromStream(new FileInputStream(cacheFile), imageKey);
           }
           else {
-            LogWrapper.logMessage("Cached version of '" + imageUrl.toString() + "' found, but is expired.");
+            LogWrapper.logMessage("Cached version of " + imageUrl.toString() + " found, but has expired.");
           }
         }
         else {
           drawable = Drawable.createFromStream(new FileInputStream(cacheFile), imageKey);
           if(drawable == null) {
-            throw new Exception("Could not create drawable from image '" + imageUrl.toString() + "'");
+            throw new Exception("Could not create drawable from image: " + imageUrl.toString());
           }
         }
       }

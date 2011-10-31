@@ -31,7 +31,7 @@ public class ImageDownloader {
       }
 
       drawable = Drawable.createFromStream(contentInputStream, imageKey);
-      LogWrapper.logMessage("Downloaded image " + imageUrl.toString());
+      LogWrapper.logMessage("Downloaded image: " + imageUrl.toString());
     }
     catch(IOException e) {
       LogWrapper.logException(e);
