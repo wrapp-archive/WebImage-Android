@@ -42,6 +42,7 @@ public class WebImageListAdapter extends BaseAdapter {
     }
 
     containerView.setImageUrl(getImageUrl(i));
+    containerView.setImageText("Image #" + i);
     return containerView;
   }
 }
