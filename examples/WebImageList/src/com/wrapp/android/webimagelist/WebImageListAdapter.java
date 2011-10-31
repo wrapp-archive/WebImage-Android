@@ -1,4 +1,4 @@
-package com.wrapp.android.webimageexample;
+package com.wrapp.android.webimagelist;
 
 import android.view.View;
 import android.view.ViewGroup;

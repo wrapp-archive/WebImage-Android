@@ -1,4 +1,4 @@
-package com.wrapp.android.webimageexample;
+package com.wrapp.android.webimagelist;
 
 import android.app.ListActivity;
 import android.os.Bundle;
