@@ -43,7 +43,6 @@
     <delete file="${output.jar}"/>
     <delete file="${manifest}"/>
     <manifest file="${manifest}">
-      <attribute name="Built-By" value="${user.name}"/>
       <attribute name="Implementation-Version" value="${version.num}"/>
     </manifest>
 
