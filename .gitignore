@@ -1,7 +1,11 @@
 *.apk
 *.iws
-gen/*
 bin/*
+gen/*
 out/*
 local.properties
+examples/*/bin/*
+examples/*/gen/*
+examples/*/out/*
+examples/*/local.properties
 .DS_Store
