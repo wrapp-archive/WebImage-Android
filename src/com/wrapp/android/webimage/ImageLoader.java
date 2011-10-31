@@ -30,50 +30,50 @@ public class ImageLoader {
             }
           }
 
-          request = requestQueue.poll();
-          Iterator requestIterator = requestQueue.iterator();
-          while(requestIterator.hasNext()) {
-            ImageRequest checkRequest = (ImageRequest)requestIterator.next();
-            if(request.listener.equals(checkRequest.listener)) {
-              if(request.imageUrl.equals(checkRequest.imageUrl)) {
-                // Ignore duplicate requests. This is common when doing view recycling in list adapters.
-                requestIterator.remove();
-              }
-              else {
-                // If this request in the queue was made by the same listener but is for a new URL,
-                // then use that request instead and remove it from the queue.
-                request = checkRequest;
-                requestIterator.remove();
-              }
-            }
-          }
+          request = getNextRequest(requestQueue);
         }
 
         processRequest(request);
       }
     }
 
+    private ImageRequest getNextRequest(Queue<ImageRequest> requestQueue) {
+      ImageRequest request = requestQueue.poll();
+      Iterator requestIterator = requestQueue.iterator();
+      while(requestIterator.hasNext()) {
+        ImageRequest checkRequest = (ImageRequest)requestIterator.next();
+        if(request.listener.equals(checkRequest.listener)) {
+          if(request.imageUrl.equals(checkRequest.imageUrl)) {
+            // Ignore duplicate requests. This is common when doing view recycling in list adapters.
+            requestIterator.remove();
+          }
+          else {
+            // If this request in the queue was made by the same listener but is for a new URL,
+            // then use that request instead and remove it from the queue.
+            request = checkRequest;
+            requestIterator.remove();
+          }
+        }
+      }
+      return request;
+    }
+
     private void processRequest(ImageRequest request) {
       Drawable drawable = ImageCache.loadImage(request);
+      // When this request is finished, check the pending requests queue again to see if this
+      // same listener has made a request for a different image. This is quite common in list
+      // adpaters when the user is scrolling quickly. In this case, we return early without
+      // notifying the listener, but at least the image will be cached to disk/memory.
+      final Queue<ImageRequest> requestQueue = getInstance().pendingRequests;
+      synchronized(requestQueue) {
+        for(ImageRequest checkRequest : requestQueue) {
+          if(request.listener.equals(checkRequest.listener) &&
+            !request.imageUrl.equals(checkRequest.listener)) {
+            return;
+          }
+        }
+      }
       request.listener.onDrawableLoaded(drawable);
-
-      // TODO: Handle running requests queue
-      /*
-      final ImageRequest[] runningRequests = getInstance().runningRequests;
-      synchronized(runningRequests) {
-        runningRequests[index] = request;
-        drawable = ImageCache.loadImage(request);
-      }
-      synchronized(runningRequests) {
-        if(request != null) {
-          request.listener.onDrawableLoaded(drawable);
-          runningRequests[index] = null;
-        }
-        else {
-          LogWrapper.logMessage("Interrupted, returning");
-        }
-      }
-      */
     }
   }
 
