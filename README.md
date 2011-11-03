@@ -2,12 +2,14 @@ WebImage for Android
 ====================
 
 WebImage is an Android library which asynchronously downloads images from the
-internet and caching them for quick access. It has the following features:
+internet and caches them for quick access. It has the following features:
 
 - Images are downloaded in a background thread pool, keeping the GUI thread
   responsive.
 - Images are cached to SD card, and if desired, also in a fast-access
   in-memory cache.
+- If the user removes the SD card, the library will still work (albeit,
+  without being able to save images to the file cache).
 - Image cache removes old images, and can fetch HTTP headers to check if an
   image is expired and needs to be re-downloaded.
 - Good performance, even on older Android 2.1 devices.
