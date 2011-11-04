@@ -95,12 +95,17 @@ public class WebImageView extends ImageView implements ImageRequest.Listener {
    * ready to be displayed. If you override this class, then you should not call this method via
    * super.onDrawableLoaded(). Instead, handle the drawable as necessary (ie, resizing or other
    * transformations), and then call postToGuiThread() to display the image from the correct thread.
+   *
+   * If you only need a callback to be notified about the drawable being loaded to update other
+   * GUI elements and whatnot, then you should override onImageLoaded() instead.
+   *
    * @param drawable Drawable returned from web/cache
    */
   public void onDrawableLoaded(final Drawable drawable) {
     postToGuiThread(new Runnable() {
       public void run() {
         setImageDrawable(drawable);
+        onImageLoaded();
       }
     });
   }
@@ -118,6 +123,13 @@ public class WebImageView extends ImageView implements ImageRequest.Listener {
       }
     });
   }
+
+  /**
+   * Override this method to perform additional work after the image has been loaded. Note that
+   * this call runs from the GUI thread, so if you have a lot of work to do (such as image resizing
+   * or other processing), you are better off overriding onDrawableLoaded() instead.
+   */
+  public void onImageLoaded() {}
 
   /**
    * Override this method to perform additional work if there was an error loading the image. If an
