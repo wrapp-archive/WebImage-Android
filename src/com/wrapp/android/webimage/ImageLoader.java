@@ -81,20 +81,25 @@ public class ImageLoader {
 
     private void processRequest(ImageRequest request) {
       Drawable drawable = ImageCache.loadImage(request);
-      // When this request is finished, check the pending requests queue again to see if this
-      // same listener has made a request for a different image. This is quite common in list
-      // adpaters when the user is scrolling quickly. In this case, we return early without
-      // notifying the listener, but at least the image will be cached to disk/memory.
-      final Queue<ImageRequest> requestQueue = getInstance().pendingRequests;
-      synchronized(requestQueue) {
-        for(ImageRequest checkRequest : requestQueue) {
-          if(request.listener.equals(checkRequest.listener) &&
-            !request.imageUrl.equals(checkRequest.listener)) {
-            return;
+      if(drawable == null) {
+        request.listener.onDrawableError("Failed to load image");
+      }
+      else {
+        // When this request has completed successfully, check the pending requests queue again
+        // to see if this same listener has made a request for a different image. This is quite
+        // common in list adpaters when the user is scrolling quickly. In this case, we return
+        // early without notifying the listener, but at least the image will be cached.
+        final Queue<ImageRequest> requestQueue = getInstance().pendingRequests;
+        synchronized(requestQueue) {
+          for(ImageRequest checkRequest : requestQueue) {
+            if(request.listener.equals(checkRequest.listener) &&
+              !request.imageUrl.equals(checkRequest.listener)) {
+              return;
+            }
           }
         }
+        request.listener.onDrawableLoaded(drawable);
       }
-      request.listener.onDrawableLoaded(drawable);
     }
   }
 

@@ -92,6 +92,14 @@ public class WebImageView extends ImageView implements ImageRequest.Listener {
   }
 
   /**
+   * Override this method to perform additional work if there was an error loading the image
+   * @param message Error message (non-localized)
+   */
+  public void onDrawableError(String message) {
+    LogWrapper.logMessage(message);
+  }
+
+  /**
    * Post a message to the GUI thread. This should be used for updating the component from
    * background tasks.
    * @param runnable Runnable task
