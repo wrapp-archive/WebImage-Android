@@ -66,11 +66,13 @@ public class ImageLoader {
         if(request.listener.equals(checkRequest.listener)) {
           if(request.imageUrl.equals(checkRequest.imageUrl)) {
             // Ignore duplicate requests. This is common when doing view recycling in list adapters.
+            request.listener.onDrawableLoadCancelled();
             requestIterator.remove();
           }
           else {
             // If this request in the queue was made by the same listener but is for a new URL,
             // then use that request instead and remove it from the queue.
+            request.listener.onDrawableLoadCancelled();
             request = checkRequest;
             requestIterator.remove();
           }
@@ -95,6 +97,7 @@ public class ImageLoader {
             for(ImageRequest checkRequest : requestQueue) {
               if(request.listener.equals(checkRequest.listener) &&
                 !request.imageUrl.equals(checkRequest.listener)) {
+                request.listener.onDrawableLoadCancelled();
                 return;
               }
             }
@@ -139,6 +142,9 @@ public class ImageLoader {
   public static void cancelAllRequests() {
     final Queue<ImageRequest> requestQueue = getInstance().pendingRequests;
     synchronized(requestQueue) {
+      for(ImageRequest request : requestQueue) {
+        request.listener.onDrawableLoadCancelled();
+      }
       requestQueue.clear();
     }
   }

@@ -125,6 +125,18 @@ public class WebImageView extends ImageView implements ImageRequest.Listener {
   }
 
   /**
+   * Called when the drawable request was cancelled. This may happen for a number of reasons, including
+   * clearing the request queue or attempting to load an image multiple times, as sometimes happens
+   * when recycling views in list adapters. Override this method to get a callback in case you want to
+   * know when this happens, which can be useful for synchronizing progress spinners or other things
+   * which rely on knowing the number of actively running background tasks.
+   *
+   * This method is called from a background thread, so if you attempt to directly update the GUI from
+   * it you will get an exception. You've been warned!
+   */
+  public void onDrawableLoadCancelled() {}
+
+  /**
    * Override this method to perform additional work after the image has been loaded. Note that
    * this call runs from the GUI thread, so if you have a lot of work to do (such as image resizing
    * or other processing), you are better off overriding onDrawableLoaded() instead.

@@ -33,6 +33,7 @@ public final class ImageRequest {
   public interface Listener {
     public void onDrawableLoaded(final Drawable drawable);
     public void onDrawableError(String message);
+    public void onDrawableLoadCancelled();
   }
 
   public ImageRequest(URL imageUrl, Listener listener, boolean cacheInMemory) {
