@@ -6,18 +6,28 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.view.Window;
 import com.wrapp.android.webimage.WebImage;
 
 public class WebImageListActivity extends ListActivity {
   @Override
   public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
+    requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
     setContentView(R.layout.web_image_activity);
 
     WebImage.clearOldCacheFiles(0);
     WebImage.enableLogging("WebImageList", Log.DEBUG);
 
-    WebImageListAdapter listAdapter = new WebImageListAdapter();
+    WebImageListAdapter listAdapter = new WebImageListAdapter(new WebImageListAdapter.ProgressController() {
+      public void taskStarted() {
+        setProgressBarIndeterminateVisibility(true);
+      }
+
+      public void allTasksStopped() {
+        setProgressBarIndeterminateVisibility(false);
+      }
+    });
     setListAdapter(listAdapter);
     listAdapter.notifyDataSetChanged();
   }

@@ -8,6 +8,17 @@ public class WebImageListAdapter extends BaseAdapter {
   private static final boolean USE_AWESOME_IMAGES = true;
   private static final int NUM_IMAGES = 100;
   private static final int IMAGE_SIZE = 100;
+  private Integer numTasks = 0;
+  private ProgressController progressController;
+
+  public interface ProgressController {
+    public void taskStarted();
+    public void allTasksStopped();
+  }
+
+  public WebImageListAdapter(ProgressController progressController) {
+    this.progressController = progressController;
+  }
 
   public int getCount() {
     return NUM_IMAGES;
@@ -41,8 +52,31 @@ public class WebImageListAdapter extends BaseAdapter {
       containerView = new WebImageContainerView(parentViewGroup.getContext());
     }
 
-    containerView.setImageUrl(getImageUrl(i));
+    onTaskStarted();
+    containerView.setImageUrl(getImageUrl(i), new ProgressWebImageView.Listener() {
+      public void onImageLoadComplete() {
+        onTaskStopped();
+      }
+    });
     containerView.setImageText("Image #" + i);
     return containerView;
+  }
+
+  private void onTaskStarted() {
+    synchronized(numTasks) {
+      if(numTasks == 0) {
+        progressController.taskStarted();
+      }
+      numTasks++;
+    }
+  }
+
+  private void onTaskStopped() {
+    synchronized(numTasks) {
+      numTasks--;
+      if(numTasks == 0) {
+        progressController.allTasksStopped();
+      }
+    }
   }
 }
