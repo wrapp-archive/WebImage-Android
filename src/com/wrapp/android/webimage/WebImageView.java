@@ -36,6 +36,7 @@ import java.net.URL;
 @SuppressWarnings({"UnusedDeclaration"})
 public class WebImageView extends ImageView implements ImageRequest.Listener {
   Handler uiHandler;
+  private Drawable errorImage;
 
   public WebImageView(Context context) {
     super(context);
@@ -77,6 +78,19 @@ public class WebImageView extends ImageView implements ImageRequest.Listener {
   }
 
   /**
+   * Load an image asynchronously from the web
+   * @param imageUrl Image URL to download image from
+   * @param cacheInMemory True to keep the downloaded drawable in the memory cache. Set to true for faster
+   * access, but be careful about using this flag, as it can consume a lot of memory. This is recommended
+   * only for activities which re-use the same images frequently.
+   * @param errorImage Drawable to be displayed in case the image could not be loaded.
+   */
+  public void setImageUrl(URL imageUrl, boolean cacheInMemory, Drawable errorImage) {
+    this.errorImage = errorImage;
+    ImageLoader.load(imageUrl, this, cacheInMemory);
+  }
+
+  /**
    * This method is called when the drawable has been downloaded (or retreived from cache) and is
    * ready to be displayed. If you override this class, then you should not call this method via
    * super.onDrawableLoaded(). Instead, handle the drawable as necessary (ie, resizing or other
@@ -92,11 +106,29 @@ public class WebImageView extends ImageView implements ImageRequest.Listener {
   }
 
   /**
-   * Override this method to perform additional work if there was an error loading the image
+   * This method is called if the drawable could not be loaded for any reason. If you need a callback
+   * to react to these events, you should override onImageError() instead.
    * @param message Error message (non-localized)
    */
   public void onDrawableError(String message) {
     LogWrapper.logMessage(message);
+    postToGuiThread(new Runnable() {
+      public void run() {
+        onImageError();
+      }
+    });
+  }
+
+  /**
+   * Override this method to perform additional work if there was an error loading the image. If an
+   * error image drawable was set in the call to setImageUrl(), then that will be displayed here.
+   * Note that this method is called from the GUI thread, so you should avoid doing too much work
+   * here.
+   */
+  private void onImageError() {
+    if(this.errorImage != null) {
+      setImageDrawable(errorImage);
+    }
   }
 
   /**
