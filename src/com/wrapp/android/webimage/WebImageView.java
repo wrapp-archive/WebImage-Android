@@ -149,7 +149,7 @@ public class WebImageView extends ImageView implements ImageRequest.Listener {
    * Note that this method is called from the GUI thread, so you should avoid doing too much work
    * here.
    */
-  private void onImageError() {
+  public void onImageError() {
     if(this.errorImage != null) {
       setImageDrawable(errorImage);
     }
