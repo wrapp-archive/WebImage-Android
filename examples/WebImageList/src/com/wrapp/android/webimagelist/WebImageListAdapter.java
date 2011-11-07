@@ -3,21 +3,20 @@ package com.wrapp.android.webimagelist;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
+import com.wrapp.android.webimage.WebImageView;
 
 public class WebImageListAdapter extends BaseAdapter {
   private static final boolean USE_AWESOME_IMAGES = true;
   private static final int NUM_IMAGES = 100;
   private static final int IMAGE_SIZE = 100;
-  private Integer numTasks = 0;
-  private ProgressController progressController;
+  private Listener listener;
 
-  public interface ProgressController {
-    public void taskStarted();
-    public void allTasksStopped();
+  public interface Listener extends WebImageView.Listener {
+    public void onImageLoadStarted();
   }
 
-  public WebImageListAdapter(ProgressController progressController) {
-    this.progressController = progressController;
+  public WebImageListAdapter(Listener listener) {
+    this.listener = listener;
   }
 
   public int getCount() {
@@ -52,31 +51,9 @@ public class WebImageListAdapter extends BaseAdapter {
       containerView = new WebImageContainerView(parentViewGroup.getContext());
     }
 
-    onTaskStarted();
-    containerView.setImageUrl(getImageUrl(i), new ProgressWebImageView.Listener() {
-      public void onImageLoadComplete() {
-        onTaskStopped();
-      }
-    });
+    listener.onImageLoadStarted();
+    containerView.setImageUrl(getImageUrl(i), listener);
     containerView.setImageText("Image #" + i);
     return containerView;
-  }
-
-  private void onTaskStarted() {
-    synchronized(numTasks) {
-      if(numTasks == 0) {
-        progressController.taskStarted();
-      }
-      numTasks++;
-    }
-  }
-
-  private void onTaskStopped() {
-    synchronized(numTasks) {
-      numTasks--;
-      if(numTasks == 0) {
-        progressController.allTasksStopped();
-      }
-    }
   }
 }
