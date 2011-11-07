@@ -78,7 +78,8 @@ public class WebImageView extends ImageView implements ImageRequest.Listener {
    * disk (ie, SD card), but not in memory.
    */
   public void setImageUrl(URL imageUrl) {
-    ImageLoader.load(imageUrl, this, false);
+    //noinspection NullableProblems
+    setImageUrl(imageUrl, false, null);
   }
 
   /**
@@ -89,7 +90,8 @@ public class WebImageView extends ImageView implements ImageRequest.Listener {
    * only for activities which re-use the same images frequently.
    */
   public void setImageUrl(URL imageUrl, boolean cacheInMemory) {
-    ImageLoader.load(imageUrl, this, cacheInMemory);
+    //noinspection NullableProblems
+    setImageUrl(imageUrl, cacheInMemory, null);
   }
 
   /**
