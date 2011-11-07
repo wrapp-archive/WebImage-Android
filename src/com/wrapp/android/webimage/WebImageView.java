@@ -37,6 +37,13 @@ import java.net.URL;
 public class WebImageView extends ImageView implements ImageRequest.Listener {
   Handler uiHandler;
   private Drawable errorImage;
+  private Listener listener;
+
+  public interface Listener {
+    public void onImageLoadComplete();
+    public void onImageLoadError();
+    public void onImageLoadCancelled();
+  }
 
   public WebImageView(Context context) {
     super(context);
@@ -55,6 +62,10 @@ public class WebImageView extends ImageView implements ImageRequest.Listener {
 
   private void initialize() {
     uiHandler = new Handler();
+  }
+
+  public void setListener(Listener listener) {
+    this.listener = listener;
   }
 
   /**
