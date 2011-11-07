@@ -40,6 +40,7 @@ public class WebImageView extends ImageView implements ImageRequest.Listener {
   private Listener listener;
 
   public interface Listener {
+    public void onImageLoadStarted();
     public void onImageLoadComplete();
     public void onImageLoadError();
     public void onImageLoadCancelled();
@@ -104,6 +105,9 @@ public class WebImageView extends ImageView implements ImageRequest.Listener {
    */
   public void setImageUrl(URL imageUrl, boolean cacheInMemory, Drawable errorImage) {
     this.errorImage = errorImage;
+    if(this.listener != null) {
+      listener.onImageLoadStarted();
+    }
     ImageLoader.load(imageUrl, this, cacheInMemory);
   }
 
