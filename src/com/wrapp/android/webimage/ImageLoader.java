@@ -66,11 +66,13 @@ public class ImageLoader {
         if(request.listener.equals(checkRequest.listener)) {
           if(request.imageUrl.equals(checkRequest.imageUrl)) {
             // Ignore duplicate requests. This is common when doing view recycling in list adapters.
+            request.listener.onDrawableLoadCancelled();
             requestIterator.remove();
           }
           else {
             // If this request in the queue was made by the same listener but is for a new URL,
             // then use that request instead and remove it from the queue.
+            request.listener.onDrawableLoadCancelled();
             request = checkRequest;
             requestIterator.remove();
           }
@@ -80,21 +82,35 @@ public class ImageLoader {
     }
 
     private void processRequest(ImageRequest request) {
-      Drawable drawable = ImageCache.loadImage(request);
-      // When this request is finished, check the pending requests queue again to see if this
-      // same listener has made a request for a different image. This is quite common in list
-      // adpaters when the user is scrolling quickly. In this case, we return early without
-      // notifying the listener, but at least the image will be cached to disk/memory.
-      final Queue<ImageRequest> requestQueue = getInstance().pendingRequests;
-      synchronized(requestQueue) {
-        for(ImageRequest checkRequest : requestQueue) {
-          if(request.listener.equals(checkRequest.listener) &&
-            !request.imageUrl.equals(checkRequest.listener)) {
-            return;
+      try {
+        Drawable drawable = ImageCache.loadImage(request);
+        if(drawable == null) {
+          request.listener.onDrawableError("Failed to load image");
+        }
+        else {
+          // When this request has completed successfully, check the pending requests queue again
+          // to see if this same listener has made a request for a different image. This is quite
+          // common in list adpaters when the user is scrolling quickly. In this case, we return
+          // early without notifying the listener, but at least the image will be cached.
+          final Queue<ImageRequest> requestQueue = getInstance().pendingRequests;
+          synchronized(requestQueue) {
+            for(ImageRequest checkRequest : requestQueue) {
+              if(request.listener.equals(checkRequest.listener) &&
+                !request.imageUrl.equals(checkRequest.listener)) {
+                request.listener.onDrawableLoadCancelled();
+                return;
+              }
+            }
           }
+          request.listener.onDrawableLoaded(drawable);
         }
       }
-      request.listener.onDrawableLoaded(drawable);
+      catch(Exception e) {
+        // Catch any other random exceptions which may be thrown when loading the image. Although
+        // the ImageLoader and ImageCache classes do rigorous try/catch checking, it doesn't hurt
+        // to have a last line of defence.
+        request.listener.onDrawableError(e.getMessage());
+      }
     }
   }
 
@@ -126,6 +142,9 @@ public class ImageLoader {
   public static void cancelAllRequests() {
     final Queue<ImageRequest> requestQueue = getInstance().pendingRequests;
     synchronized(requestQueue) {
+      for(ImageRequest request : requestQueue) {
+        request.listener.onDrawableLoadCancelled();
+      }
       requestQueue.clear();
     }
   }

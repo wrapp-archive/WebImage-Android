@@ -196,7 +196,6 @@ public class ImageCache {
 
   /**
    * Clear all images older than a given amount of seconds.
-   *
    * @param cacheAgeInSec Image expiration limit, in seconds
    */
   public static void clearOldCacheFiles(long cacheAgeInSec) {
@@ -217,6 +216,11 @@ public class ImageCache {
     }
   }
 
+  /**
+   * Remove all images from the fast in-memory cache. This should be called to free up memory
+   * when receiving onLowMemory warnings or when the activity knows it has no use for the items
+   * in the memory cache anymore.
+   */
   public static void clearMemoryCaches() {
     LogWrapper.logMessage("Emptying in-memory drawable cache");
     for(String key : drawableCache.keySet()) {

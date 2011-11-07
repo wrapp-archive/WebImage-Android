@@ -3,11 +3,17 @@ package com.wrapp.android.webimagelist;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
+import com.wrapp.android.webimage.WebImageView;
 
 public class WebImageListAdapter extends BaseAdapter {
   private static final boolean USE_AWESOME_IMAGES = true;
   private static final int NUM_IMAGES = 100;
   private static final int IMAGE_SIZE = 100;
+  private WebImageView.Listener listener;
+
+  public WebImageListAdapter(WebImageView.Listener listener) {
+    this.listener = listener;
+  }
 
   public int getCount() {
     return NUM_IMAGES;
@@ -41,7 +47,7 @@ public class WebImageListAdapter extends BaseAdapter {
       containerView = new WebImageContainerView(parentViewGroup.getContext());
     }
 
-    containerView.setImageUrl(getImageUrl(i));
+    containerView.setImageUrl(getImageUrl(i), listener);
     containerView.setImageText("Image #" + i);
     return containerView;
   }
