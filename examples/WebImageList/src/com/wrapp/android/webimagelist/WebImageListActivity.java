@@ -2,6 +2,7 @@ package com.wrapp.android.webimagelist;
 
 import android.app.ListActivity;
 import android.os.Bundle;
+import android.os.Handler;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -10,6 +11,10 @@ import android.view.Window;
 import com.wrapp.android.webimage.WebImage;
 
 public class WebImageListActivity extends ListActivity {
+  private static final long SHOW_PROGRESS_DELAY_IN_MS = 50;
+  private Handler uiHandler;
+  private Integer numTasks = 0;
+
   @Override
   public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
@@ -18,14 +23,33 @@ public class WebImageListActivity extends ListActivity {
 
     WebImage.clearOldCacheFiles(0);
     WebImage.enableLogging("WebImageList", Log.DEBUG);
+    uiHandler = new Handler();
 
-    WebImageListAdapter listAdapter = new WebImageListAdapter(new WebImageListAdapter.ProgressController() {
-      public void taskStarted() {
-        setProgressBarIndeterminateVisibility(true);
+    WebImageListAdapter listAdapter = new WebImageListAdapter(new WebImageListAdapter.Listener() {
+      Runnable stopTaskRunnable = new Runnable() {
+        public void run() {
+          onTaskStopped();
+        }
+      };
+
+      public void onImageLoadStarted() {
+        uiHandler.postDelayed(new Runnable() {
+          public void run() {
+            onTaskStarted();
+          }
+        }, SHOW_PROGRESS_DELAY_IN_MS);
       }
 
-      public void allTasksStopped() {
-        setProgressBarIndeterminateVisibility(false);
+      public void onImageLoadComplete() {
+        uiHandler.post(stopTaskRunnable);
+      }
+
+      public void onImageLoadError() {
+        uiHandler.post(stopTaskRunnable);
+      }
+
+      public void onImageLoadCancelled() {
+        uiHandler.post(stopTaskRunnable);
       }
     });
     setListAdapter(listAdapter);
@@ -74,5 +98,23 @@ public class WebImageListActivity extends ListActivity {
   private void refresh() {
     final WebImageListAdapter listAdapter = (WebImageListAdapter)getListAdapter();
     listAdapter.notifyDataSetChanged();
+  }
+
+  private void onTaskStarted() {
+    synchronized(numTasks) {
+      if(numTasks == 0) {
+        setProgressBarIndeterminateVisibility(true);
+      }
+      numTasks++;
+    }
+  }
+
+  private void onTaskStopped() {
+    synchronized(numTasks) {
+      numTasks--;
+      if(numTasks == 0) {
+        setProgressBarIndeterminateVisibility(false);
+      }
+    }
   }
 }
