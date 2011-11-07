@@ -9,13 +9,9 @@ public class WebImageListAdapter extends BaseAdapter {
   private static final boolean USE_AWESOME_IMAGES = true;
   private static final int NUM_IMAGES = 100;
   private static final int IMAGE_SIZE = 100;
-  private Listener listener;
+  private WebImageView.Listener listener;
 
-  public interface Listener extends WebImageView.Listener {
-    public void onImageLoadStarted();
-  }
-
-  public WebImageListAdapter(Listener listener) {
+  public WebImageListAdapter(WebImageView.Listener listener) {
     this.listener = listener;
   }
 

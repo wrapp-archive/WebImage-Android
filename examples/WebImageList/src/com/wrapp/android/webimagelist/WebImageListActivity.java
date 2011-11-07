@@ -9,8 +9,9 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.Window;
 import com.wrapp.android.webimage.WebImage;
+import com.wrapp.android.webimage.WebImageView;
 
-public class WebImageListActivity extends ListActivity implements WebImageListAdapter.Listener {
+public class WebImageListActivity extends ListActivity implements WebImageView.Listener {
   // Don't show the progress spinner right away, because when scrolling rapidly through the list
   // of images, there will get a bunch of callbacks which may cause the progress spinner to flicker
   // as it is rapidly shown and hidden. Imposing a small delay here will show the spinner only when
