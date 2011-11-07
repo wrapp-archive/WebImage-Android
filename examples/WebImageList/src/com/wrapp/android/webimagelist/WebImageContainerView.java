@@ -11,6 +11,7 @@ import com.wrapp.android.webimage.WebImageView;
 import java.net.MalformedURLException;
 import java.net.URL;
 
+/** Small container class for a WebImageView and a corresponding TextView */
 @SuppressWarnings({"UnusedDeclaration"})
 public class WebImageContainerView extends RelativeLayout {
   private WebImageView webImageView;

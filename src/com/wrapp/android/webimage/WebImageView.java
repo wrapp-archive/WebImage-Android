@@ -64,6 +64,10 @@ public class WebImageView extends ImageView implements ImageRequest.Listener {
     uiHandler = new Handler();
   }
 
+  /**
+   * Set a listener to be informed about events from this view. If this is not set, then no events are sent.
+   * @param listener Listener
+   */
   public void setListener(Listener listener) {
     this.listener = listener;
   }
@@ -142,6 +146,11 @@ public class WebImageView extends ImageView implements ImageRequest.Listener {
     }
   }
 
+  /**
+   * Called when the URL which the caller asked to load was cancelled. This can happen for a number
+   * of reasons, including the activity being closed or scrolling rapidly in a ListView. For this
+   * reason it is recommended not to do so much work in this method.
+   */
   public void onDrawableLoadCancelled() {
     if(listener != null) {
       listener.onImageLoadCancelled();
