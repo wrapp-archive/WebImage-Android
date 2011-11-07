@@ -11,7 +11,7 @@ import android.view.Window;
 import com.wrapp.android.webimage.WebImage;
 
 public class WebImageListActivity extends ListActivity {
-  private static final long SHOW_PROGRESS_DELAY_IN_MS = 50;
+  private static final long SHOW_PROGRESS_DELAY_IN_MS = 100;
   private Handler uiHandler;
   private Integer numTasks = 0;
 
