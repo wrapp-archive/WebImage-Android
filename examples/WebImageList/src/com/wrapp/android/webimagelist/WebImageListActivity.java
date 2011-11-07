@@ -10,7 +10,7 @@ import android.view.MenuItem;
 import android.view.Window;
 import com.wrapp.android.webimage.WebImage;
 
-public class WebImageListActivity extends ListActivity {
+public class WebImageListActivity extends ListActivity implements WebImageListAdapter.Listener {
   private static final long SHOW_PROGRESS_DELAY_IN_MS = 100;
   private Handler uiHandler;
   private Integer numTasks = 0;
@@ -22,38 +22,21 @@ public class WebImageListActivity extends ListActivity {
     setContentView(R.layout.web_image_activity);
 
     WebImage.clearOldCacheFiles(0);
+
+    // Turn on logging so we can see what is going on.
     WebImage.enableLogging("WebImageList", Log.DEBUG);
+
+    // Create handler, runnable used when stopping tasks.
     uiHandler = new Handler();
-
-    WebImageListAdapter listAdapter = new WebImageListAdapter(new WebImageListAdapter.Listener() {
-      Runnable stopTaskRunnable = new Runnable() {
-        public void run() {
-          onTaskStopped();
-        }
-      };
-
-      public void onImageLoadStarted() {
-        uiHandler.postDelayed(new Runnable() {
-          public void run() {
-            onTaskStarted();
-          }
-        }, SHOW_PROGRESS_DELAY_IN_MS);
+    stopTaskRunnable = new Runnable() {
+      public void run() {
+        onTaskStopped();
       }
+    };
 
-      public void onImageLoadComplete() {
-        uiHandler.post(stopTaskRunnable);
-      }
-
-      public void onImageLoadError() {
-        uiHandler.post(stopTaskRunnable);
-      }
-
-      public void onImageLoadCancelled() {
-        uiHandler.post(stopTaskRunnable);
-      }
-    });
+    // Create a list adapter and attach it to the ListView
+    WebImageListAdapter listAdapter = new WebImageListAdapter(this);
     setListAdapter(listAdapter);
-    listAdapter.notifyDataSetChanged();
   }
 
   @Override
@@ -98,6 +81,26 @@ public class WebImageListActivity extends ListActivity {
   private void refresh() {
     final WebImageListAdapter listAdapter = (WebImageListAdapter)getListAdapter();
     listAdapter.notifyDataSetChanged();
+  }
+
+  public void onImageLoadStarted() {
+    uiHandler.postDelayed(new Runnable() {
+      public void run() {
+        onTaskStarted();
+      }
+    }, SHOW_PROGRESS_DELAY_IN_MS);
+  }
+
+  public void onImageLoadComplete() {
+    uiHandler.post(stopTaskRunnable);
+  }
+
+  public void onImageLoadError() {
+    uiHandler.post(stopTaskRunnable);
+  }
+
+  public void onImageLoadCancelled() {
+    uiHandler.post(stopTaskRunnable);
   }
 
   private void onTaskStarted() {
