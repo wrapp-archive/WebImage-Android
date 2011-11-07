@@ -6,13 +6,14 @@ import android.util.AttributeSet;
 import android.view.LayoutInflater;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
+import com.wrapp.android.webimage.WebImageView;
 
 import java.net.MalformedURLException;
 import java.net.URL;
 
 @SuppressWarnings({"UnusedDeclaration"})
 public class WebImageContainerView extends RelativeLayout {
-  private ProgressWebImageView webImageView;
+  private WebImageView webImageView;
   private TextView imageText;
   private static Drawable errorImage;
 
@@ -38,11 +39,11 @@ public class WebImageContainerView extends RelativeLayout {
 
     LayoutInflater layoutInflater = (LayoutInflater)context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
     layoutInflater.inflate(R.layout.web_image_container_view, this, true);
-    webImageView = (ProgressWebImageView)findViewById(R.id.WebImageView);
+    webImageView = (WebImageView)findViewById(R.id.WebImageView);
     imageText = (TextView)findViewById(R.id.WebImageViewText);
   }
 
-  public void setImageUrl(String imageUrlString, ProgressWebImageView.Listener listener) {
+  public void setImageUrl(String imageUrlString, WebImageView.Listener listener) {
     try {
       URL imageUrl = new URL(imageUrlString);
       webImageView.setImageResource(R.drawable.person_placeholder);
