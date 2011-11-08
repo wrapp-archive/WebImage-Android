@@ -96,7 +96,7 @@ public class ImageLoader {
           synchronized(requestQueue) {
             for(ImageRequest checkRequest : requestQueue) {
               if(request.listener.equals(checkRequest.listener) &&
-                !request.imageUrl.equals(checkRequest.listener)) {
+                !request.imageUrl.equals(checkRequest.imageUrl)) {
                 request.listener.onDrawableLoadCancelled();
                 return;
               }
