@@ -30,14 +30,14 @@
   </component>
   <component name="CopyrightManager" default="MIT License">
     <copyright>
-      <option name="notice" value="Copyright (c) &amp;#36;today.year Bohemian Wrappsody, AB&#10;&#10;Permission is hereby granted, free of charge, to any person obtaining a copy of&#10;this software and associated documentation files (the &quot;Software&quot;), to deal in&#10;the Software without restriction, including without limitation the rights to&#10;use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of&#10;the Software, and to permit persons to whom the Software is furnished to do so,&#10;subject to the following conditions:&#10;&#10;The above copyright notice and this permission notice shall be included in all&#10;copies or substantial portions of the Software.&#10;&#10;THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR&#10;IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS&#10;FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE AUTHORS OR&#10;COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER&#10;IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN&#10;CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE." />
+      <option name="notice" value="Copyright (c) &amp;#36;today.year Bohemian Wrappsody AB&#10;&#10;Permission is hereby granted, free of charge, to any person obtaining a copy of&#10;this software and associated documentation files (the &quot;Software&quot;), to deal in&#10;the Software without restriction, including without limitation the rights to&#10;use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of&#10;the Software, and to permit persons to whom the Software is furnished to do so,&#10;subject to the following conditions:&#10;&#10;The above copyright notice and this permission notice shall be included in all&#10;copies or substantial portions of the Software.&#10;&#10;THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR&#10;IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS&#10;FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE AUTHORS OR&#10;COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER&#10;IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN&#10;CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE." />
       <option name="keyword" value="Copyright" />
       <option name="allowReplaceKeyword" value="" />
       <option name="myName" value="MIT License" />
       <option name="myLocal" value="true" />
     </copyright>
     <module2copyright>
-      <element module="WebImage Source" copyright="MIT License" />
+      <element module="Project Files" copyright="MIT License" />
     </module2copyright>
   </component>
   <component name="DependencyValidationManager">
