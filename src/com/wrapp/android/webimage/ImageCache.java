@@ -103,9 +103,15 @@ public class ImageCache {
         if(fileAgeInMs > CACHE_RECHECK_AGE_IN_MS) {
           Date expirationDate = ImageDownloader.getServerTimestamp(imageUrl);
           if(expirationDate.after(now)) {
-            LogWrapper.logMessage("Cached version of " + imageUrl.toString() + " is still current, updating timestamp");
-            cacheFile.setLastModified(now.getTime());
             drawable = Drawable.createFromStream(new FileInputStream(cacheFile), imageKey);
+            LogWrapper.logMessage("Cached version of " + imageUrl.toString() + " is still current, updating timestamp");
+            if(!cacheFile.setLastModified(now.getTime())) {
+              // Ugh, it seems that in some cases this call will always return false and refuse to update the timestamp
+              // For more info, see: http://code.google.com/p/android/issues/detail?id=18624
+              // In these cases, we manually re-write the file to disk. Yes, that sucks, but it's better than loosing
+              // the ability to do any intelligent file caching at all.
+              saveImageInFileCache(imageKey, drawable);
+            }
           }
           else {
             LogWrapper.logMessage("Cached version of " + imageUrl.toString() + " found, but has expired.");
