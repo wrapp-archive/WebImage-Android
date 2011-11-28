@@ -35,8 +35,11 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class ImageCache {
-  private static final long CACHE_RECHECK_AGE_IN_SEC = 24 * 60 * 60; // One day
-  private static final long CACHE_EXPIRATION_AGE_IN_SEC = CACHE_RECHECK_AGE_IN_SEC * 30; // One month
+  private static final long ONE_DAY_IN_SEC = 24 * 60 * 60;
+  private static final long CACHE_RECHECK_AGE_IN_SEC = ONE_DAY_IN_SEC;
+  private static final long CACHE_RECHECK_AGE_IN_MS = CACHE_RECHECK_AGE_IN_SEC * 1000;
+  private static final long CACHE_EXPIRATION_AGE_IN_SEC = ONE_DAY_IN_SEC * 30;
+  private static final long CACHE_EXPIRATION_AGE_IN_MS = CACHE_EXPIRATION_AGE_IN_SEC * 1000;
   private static final String DEFAULT_CACHE_DIRECTORY_NAME = "images";
 
   private static File cacheDirectory;
@@ -97,7 +100,7 @@ public class ImageCache {
       try {
         Date now = new Date();
         long fileAgeInMs = now.getTime() - cacheFile.lastModified();
-        if(fileAgeInMs > CACHE_RECHECK_AGE_IN_SEC * 1000) {
+        if(fileAgeInMs > CACHE_RECHECK_AGE_IN_MS) {
           Date expirationDate = ImageDownloader.getServerTimestamp(imageUrl);
           if(expirationDate.after(now)) {
             LogWrapper.logMessage("Cached version of " + imageUrl.toString() + " is still current, updating timestamp");
