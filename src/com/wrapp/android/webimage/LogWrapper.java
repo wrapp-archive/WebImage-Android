@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011 Bohemian Wrappsody, AB
+ * Copyright (c) 2011 Bohemian Wrappsody AB
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -33,7 +33,8 @@ public class LogWrapper {
   }
 
   public static final void logMessage(String message) {
-    if(tag != null) {
+    // Log.println() will throw if the message is null or empty, so better to do the check here
+    if(tag != null && message != null && message.length() > 0) {
       Log.println(level, tag, message);
     }
   }

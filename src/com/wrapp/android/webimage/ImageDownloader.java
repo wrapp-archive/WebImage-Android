@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011 Bohemian Wrappsody, AB
+ * Copyright (c) 2011 Bohemian Wrappsody AB
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -36,6 +36,8 @@ import java.util.Date;
 import java.util.Locale;
 
 public class ImageDownloader {
+  private static final int CONNECTION_TIMEOUT_IN_MS = 10 * 1000;
+
   public static Drawable loadImage(final String imageKey, final URL imageUrl) {
     Drawable drawable = null;
     InputStream contentInputStream = null;
@@ -100,6 +102,7 @@ public class ImageDownloader {
     }
     LogWrapper.logMessage("Requesting image '" + imageUrl + "'");
     HttpClient httpClient = new DefaultHttpClient();
+    httpClient.getParams().setParameter("http.socket.timeout", CONNECTION_TIMEOUT_IN_MS);
     HttpGet httpGet = new HttpGet(imageUrl);
     HttpResponse response = httpClient.execute(httpGet);
     return response;

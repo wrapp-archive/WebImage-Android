@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011 Bohemian Wrappsody, AB
+ * Copyright (c) 2011 Bohemian Wrappsody AB
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -35,8 +35,11 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class ImageCache {
-  private static final long CACHE_RECHECK_AGE_IN_SEC = 24 * 60 * 60; // One day
-  private static final long CACHE_EXPIRATION_AGE_IN_SEC = CACHE_RECHECK_AGE_IN_SEC * 30; // One month
+  private static final long ONE_DAY_IN_SEC = 24 * 60 * 60;
+  private static final long CACHE_RECHECK_AGE_IN_SEC = ONE_DAY_IN_SEC;
+  private static final long CACHE_RECHECK_AGE_IN_MS = CACHE_RECHECK_AGE_IN_SEC * 1000;
+  private static final long CACHE_EXPIRATION_AGE_IN_SEC = ONE_DAY_IN_SEC * 30;
+  private static final long CACHE_EXPIRATION_AGE_IN_MS = CACHE_EXPIRATION_AGE_IN_SEC * 1000;
   private static final String DEFAULT_CACHE_DIRECTORY_NAME = "images";
 
   private static File cacheDirectory;
@@ -97,12 +100,18 @@ public class ImageCache {
       try {
         Date now = new Date();
         long fileAgeInMs = now.getTime() - cacheFile.lastModified();
-        if(fileAgeInMs > CACHE_RECHECK_AGE_IN_SEC * 1000) {
+        if(fileAgeInMs > CACHE_RECHECK_AGE_IN_MS) {
           Date expirationDate = ImageDownloader.getServerTimestamp(imageUrl);
           if(expirationDate.after(now)) {
-            LogWrapper.logMessage("Cached version of " + imageUrl.toString() + " is still current, updating timestamp");
-            cacheFile.setLastModified(now.getTime());
             drawable = Drawable.createFromStream(new FileInputStream(cacheFile), imageKey);
+            LogWrapper.logMessage("Cached version of " + imageUrl.toString() + " is still current, updating timestamp");
+            if(!cacheFile.setLastModified(now.getTime())) {
+              // Ugh, it seems that in some cases this call will always return false and refuse to update the timestamp
+              // For more info, see: http://code.google.com/p/android/issues/detail?id=18624
+              // In these cases, we manually re-write the file to disk. Yes, that sucks, but it's better than loosing
+              // the ability to do any intelligent file caching at all.
+              saveImageInFileCache(imageKey, drawable);
+            }
           }
           else {
             LogWrapper.logMessage("Cached version of " + imageUrl.toString() + " found, but has expired.");
