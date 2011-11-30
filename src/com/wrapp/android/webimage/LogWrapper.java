@@ -33,7 +33,8 @@ public class LogWrapper {
   }
 
   public static final void logMessage(String message) {
-    if(tag != null) {
+    // Log.println() will throw if the message is null or empty, so better to do the check here
+    if(tag != null && message != null && message.length() > 0) {
       Log.println(level, tag, message);
     }
   }
