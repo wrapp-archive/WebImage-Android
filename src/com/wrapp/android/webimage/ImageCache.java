@@ -81,20 +81,22 @@ public class ImageCache {
   }
 
   private static Drawable loadImageFromMemoryCache(final String imageKey) {
-    if(drawableCache.containsKey(imageKey)) {
-      // Apparently Android's SoftReference can sometimes free objects too early, see:
-      // http://groups.google.com/group/android-developers/browse_thread/thread/ebabb0dadf38acc1
-      // If that happens then it's no big deal, as this class will simply re-load the image
-      // from file, but if that is the case then we should be polite and remove the imageKey
-      // from the cache to reflect the actual caching state of this image.
-      final Drawable drawable = drawableCache.get(imageKey).get();
-      if(drawable == null) {
-        drawableCache.remove(imageKey);
+    synchronized(drawableCache) {
+      if(drawableCache.containsKey(imageKey)) {
+        // Apparently Android's SoftReference can sometimes free objects too early, see:
+        // http://groups.google.com/group/android-developers/browse_thread/thread/ebabb0dadf38acc1
+        // If that happens then it's no big deal, as this class will simply re-load the image
+        // from file, but if that is the case then we should be polite and remove the imageKey
+        // from the cache to reflect the actual caching state of this image.
+        final Drawable drawable = drawableCache.get(imageKey).get();
+        if(drawable == null) {
+          drawableCache.remove(imageKey);
+        }
+        return drawable;
       }
-      return drawable;
-    }
-    else {
-      return null;
+      else {
+        return null;
+      }
     }
   }
 
@@ -139,7 +141,9 @@ public class ImageCache {
   }
 
   private static void saveImageInMemoryCache(String imageKey, final Drawable drawable) {
-    drawableCache.put(imageKey, new SoftReference<Drawable>(drawable));
+    synchronized(drawableCache) {
+      drawableCache.put(imageKey, new SoftReference<Drawable>(drawable));
+    }
   }
 
   private static void saveImageInFileCache(String imageKey, final Drawable drawable) {
@@ -237,12 +241,16 @@ public class ImageCache {
    * in the memory cache anymore.
    */
   public static void clearMemoryCaches() {
-    LogWrapper.logMessage("Emptying in-memory drawable cache");
-    for(String key : drawableCache.keySet()) {
-      SoftReference reference = drawableCache.get(key);
-      reference.clear();
+    synchronized(drawableCache) {
+      LogWrapper.logMessage("Emptying in-memory drawable cache");
+      for(String key : drawableCache.keySet()) {
+        SoftReference reference = drawableCache.get(key);
+        if(reference != null) {
+          reference.clear();
+        }
+      }
+      drawableCache.clear();
     }
-    drawableCache.clear();
     System.gc();
   }
 
