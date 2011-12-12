@@ -241,15 +241,17 @@ public class ImageCache {
    * in the memory cache anymore.
    */
   public static void clearMemoryCaches() {
-    synchronized(drawableCache) {
-      LogWrapper.logMessage("Emptying in-memory drawable cache");
-      for(String key : drawableCache.keySet()) {
-        SoftReference reference = drawableCache.get(key);
-        if(reference != null) {
-          reference.clear();
+    if(drawableCache != null) {
+      synchronized(drawableCache) {
+        LogWrapper.logMessage("Emptying in-memory drawable cache");
+        for(String key : drawableCache.keySet()) {
+          SoftReference reference = drawableCache.get(key);
+          if(reference != null) {
+            reference.clear();
+          }
         }
+        drawableCache.clear();
       }
-      drawableCache.clear();
     }
     System.gc();
   }
