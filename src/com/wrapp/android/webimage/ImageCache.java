@@ -40,7 +40,7 @@ public class ImageCache {
   private static final long CACHE_RECHECK_AGE_IN_MS = CACHE_RECHECK_AGE_IN_SEC * 1000;
   private static final long CACHE_EXPIRATION_AGE_IN_SEC = ONE_DAY_IN_SEC * 30;
   private static final long CACHE_EXPIRATION_AGE_IN_MS = CACHE_EXPIRATION_AGE_IN_SEC * 1000;
-  private static final String DEFAULT_CACHE_DIRECTORY_NAME = "images";
+  private static final String DEFAULT_CACHE_SUBDIRECTORY_NAME = "images";
 
   private static File cacheDirectory;
   private static Map<String, SoftReference<Drawable>> drawableCache = new HashMap<String, SoftReference<Drawable>>();
@@ -176,31 +176,52 @@ public class ImageCache {
   private static File getCacheDirectory() {
     if(cacheDirectory == null) {
       //noinspection NullableProblems
-      setCacheDirectory(null, DEFAULT_CACHE_DIRECTORY_NAME);
+      setCacheDirectory(null, DEFAULT_CACHE_SUBDIRECTORY_NAME);
     }
     return cacheDirectory;
   }
 
   public static void setCacheDirectory(String packageName, String subdirectoryName) {
-    File dataDirectory = new File(android.os.Environment.getExternalStorageDirectory(), "data");
+    final File androidDirectory = new File(android.os.Environment.getExternalStorageDirectory(), "Android");
+    if(!androidDirectory.exists()) {
+      androidDirectory.mkdir();
+    }
+
+    final File dataDirectory = new File(androidDirectory, "data");
     if(!dataDirectory.exists()) {
       dataDirectory.mkdir();
     }
 
-    File packageDirectory;
-    if(packageName != null) {
-      packageDirectory = new File(dataDirectory, packageName);
-      if(!packageDirectory.exists()) {
-        packageDirectory.mkdir();
-      }
+    // If package name is null, then use this package name instead
+    if(packageName == null) {
+      packageName = ImageCache.class.getPackage().getName();
     }
-    else {
-      packageDirectory = dataDirectory;
+
+    final File packageDirectory = new File(dataDirectory, packageName);
+    if(!packageDirectory.exists()) {
+      packageDirectory.mkdir();
     }
 
     cacheDirectory = new File(packageDirectory, subdirectoryName);
     if(!cacheDirectory.exists()) {
       cacheDirectory.mkdir();
+    }
+
+    if(packageName != null) {
+      // WebImage 1.1.2 and earlier stored images in /mnt/sdcard/data/packageName. If images are found there,
+      // we should migrate them to the correct location. Unfortunately, WebImage 1.1.2 and below also used
+      // the location /mnt/sdcard/data/images if no packageName was supplied. Since this isn't very specific,
+      // we don't bother to remove those images, as they may belong to other applications.
+      final File oldDataDirectory = new File(android.os.Environment.getExternalStorageDirectory(), "data");
+      final File oldPackageDirectory = new File(oldDataDirectory, packageName);
+      final File oldCacheDirectory = new File(oldPackageDirectory, subdirectoryName);
+      if(oldCacheDirectory.exists()) {
+        if(cacheDirectory.delete()) {
+          if(!oldCacheDirectory.renameTo(cacheDirectory)) {
+            LogWrapper.logMessage("Could not migrate old image directory");
+          }
+        }
+      }
     }
   }
 
