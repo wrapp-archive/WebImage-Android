@@ -40,10 +40,16 @@ public class ImageCache {
   private static final long CACHE_RECHECK_AGE_IN_MS = CACHE_RECHECK_AGE_IN_SEC * 1000;
   private static final long CACHE_EXPIRATION_AGE_IN_SEC = ONE_DAY_IN_SEC * 30;
   private static final long CACHE_EXPIRATION_AGE_IN_MS = CACHE_EXPIRATION_AGE_IN_SEC * 1000;
-  private static final String DEFAULT_CACHE_DIRECTORY_NAME = "images";
+  private static final String DEFAULT_CACHE_SUBDIRECTORY_NAME = "images";
 
   private static File cacheDirectory;
   private static Map<String, SoftReference<Drawable>> drawableCache = new HashMap<String, SoftReference<Drawable>>();
+
+  public static boolean isImageCached(URL imageUrl) {
+    final String imageKey = getKeyForUrl(imageUrl);
+    final File cacheFile = new File(getCacheDirectory(), imageKey);
+    return cacheFile.exists();
+  }
 
   public static Drawable loadImage(ImageRequest request) {
     final String imageKey = getKeyForUrl(request.imageUrl);
@@ -75,20 +81,22 @@ public class ImageCache {
   }
 
   private static Drawable loadImageFromMemoryCache(final String imageKey) {
-    if(drawableCache.containsKey(imageKey)) {
-      // Apparently Android's SoftReference can sometimes free objects too early, see:
-      // http://groups.google.com/group/android-developers/browse_thread/thread/ebabb0dadf38acc1
-      // If that happens then it's no big deal, as this class will simply re-load the image
-      // from file, but if that is the case then we should be polite and remove the imageKey
-      // from the cache to reflect the actual caching state of this image.
-      final Drawable drawable = drawableCache.get(imageKey).get();
-      if(drawable == null) {
-        drawableCache.remove(imageKey);
+    synchronized(drawableCache) {
+      if(drawableCache.containsKey(imageKey)) {
+        // Apparently Android's SoftReference can sometimes free objects too early, see:
+        // http://groups.google.com/group/android-developers/browse_thread/thread/ebabb0dadf38acc1
+        // If that happens then it's no big deal, as this class will simply re-load the image
+        // from file, but if that is the case then we should be polite and remove the imageKey
+        // from the cache to reflect the actual caching state of this image.
+        final Drawable drawable = drawableCache.get(imageKey).get();
+        if(drawable == null) {
+          drawableCache.remove(imageKey);
+        }
+        return drawable;
       }
-      return drawable;
-    }
-    else {
-      return null;
+      else {
+        return null;
+      }
     }
   }
 
@@ -133,7 +141,9 @@ public class ImageCache {
   }
 
   private static void saveImageInMemoryCache(String imageKey, final Drawable drawable) {
-    drawableCache.put(imageKey, new SoftReference<Drawable>(drawable));
+    synchronized(drawableCache) {
+      drawableCache.put(imageKey, new SoftReference<Drawable>(drawable));
+    }
   }
 
   private static void saveImageInFileCache(String imageKey, final Drawable drawable) {
@@ -146,7 +156,6 @@ public class ImageCache {
       bitmapDrawable.getBitmap().compress(Bitmap.CompressFormat.PNG, 100, outputStream);
       LogWrapper.logMessage("Saved image " + imageKey + " to file cache");
       outputStream.flush();
-      outputStream.close();
     }
     catch(IOException e) {
       LogWrapper.logException(e);
@@ -167,31 +176,52 @@ public class ImageCache {
   private static File getCacheDirectory() {
     if(cacheDirectory == null) {
       //noinspection NullableProblems
-      setCacheDirectory(null, DEFAULT_CACHE_DIRECTORY_NAME);
+      setCacheDirectory(null, DEFAULT_CACHE_SUBDIRECTORY_NAME);
     }
     return cacheDirectory;
   }
 
   public static void setCacheDirectory(String packageName, String subdirectoryName) {
-    File dataDirectory = new File(android.os.Environment.getExternalStorageDirectory(), "data");
+    final File androidDirectory = new File(android.os.Environment.getExternalStorageDirectory(), "Android");
+    if(!androidDirectory.exists()) {
+      androidDirectory.mkdir();
+    }
+
+    final File dataDirectory = new File(androidDirectory, "data");
     if(!dataDirectory.exists()) {
       dataDirectory.mkdir();
     }
 
-    File packageDirectory;
-    if(packageName != null) {
-      packageDirectory = new File(dataDirectory, packageName);
-      if(!packageDirectory.exists()) {
-        packageDirectory.mkdir();
-      }
+    // If package name is null, then use this package name instead
+    if(packageName == null) {
+      packageName = ImageCache.class.getPackage().getName();
     }
-    else {
-      packageDirectory = dataDirectory;
+
+    final File packageDirectory = new File(dataDirectory, packageName);
+    if(!packageDirectory.exists()) {
+      packageDirectory.mkdir();
     }
 
     cacheDirectory = new File(packageDirectory, subdirectoryName);
     if(!cacheDirectory.exists()) {
       cacheDirectory.mkdir();
+    }
+
+    if(packageName != null) {
+      // WebImage 1.1.2 and earlier stored images in /mnt/sdcard/data/packageName. If images are found there,
+      // we should migrate them to the correct location. Unfortunately, WebImage 1.1.2 and below also used
+      // the location /mnt/sdcard/data/images if no packageName was supplied. Since this isn't very specific,
+      // we don't bother to remove those images, as they may belong to other applications.
+      final File oldDataDirectory = new File(android.os.Environment.getExternalStorageDirectory(), "data");
+      final File oldPackageDirectory = new File(oldDataDirectory, packageName);
+      final File oldCacheDirectory = new File(oldPackageDirectory, subdirectoryName);
+      if(oldCacheDirectory.exists()) {
+        if(cacheDirectory.delete()) {
+          if(!oldCacheDirectory.renameTo(cacheDirectory)) {
+            LogWrapper.logMessage("Could not migrate old image directory");
+          }
+        }
+      }
     }
   }
 
@@ -231,12 +261,18 @@ public class ImageCache {
    * in the memory cache anymore.
    */
   public static void clearMemoryCaches() {
-    LogWrapper.logMessage("Emptying in-memory drawable cache");
-    for(String key : drawableCache.keySet()) {
-      SoftReference reference = drawableCache.get(key);
-      reference.clear();
+    if(drawableCache != null) {
+      synchronized(drawableCache) {
+        LogWrapper.logMessage("Emptying in-memory drawable cache");
+        for(String key : drawableCache.keySet()) {
+          SoftReference reference = drawableCache.get(key);
+          if(reference != null) {
+            reference.clear();
+          }
+        }
+        drawableCache.clear();
+      }
     }
-    drawableCache.clear();
     System.gc();
   }
 

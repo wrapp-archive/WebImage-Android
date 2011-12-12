@@ -40,11 +40,12 @@ public class ImageDownloader {
 
   public static Drawable loadImage(final String imageKey, final URL imageUrl) {
     Drawable drawable = null;
+    HttpEntity responseEntity = null;
     InputStream contentInputStream = null;
 
     try {
       HttpResponse response = getHttpResponseForImage(imageUrl);
-      HttpEntity responseEntity = response.getEntity();
+      responseEntity = response.getEntity();
       if(responseEntity == null) {
         throw new Exception("No response entity for image: " + imageUrl.toString());
       }
@@ -66,6 +67,9 @@ public class ImageDownloader {
       try {
         if(contentInputStream != null) {
           contentInputStream.close();
+        }
+        if(responseEntity != null) {
+          responseEntity.consumeContent();
         }
       }
       catch(IOException e) {
