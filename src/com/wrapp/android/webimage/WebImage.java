@@ -44,6 +44,17 @@ public class WebImage {
   }
 
   /**
+   * Check to see if an image has already been saved in the file cache. This can be useful when
+   * you want to display an animation or other GUI notification in case the image has to be
+   * fetched from the net.
+   * @param imageUrl URL to check
+   * @return True if the image is in the file cache, false otherwise
+   */
+  public static boolean isImageCached(URL imageUrl) {
+    return ImageCache.isImageCached(imageUrl);
+  }
+
+  /**
    * Cancel all pending requests. The parent activity should call this method when it is about
    * to be stopped or paused, or else you will waste resources by running in the background.
    */

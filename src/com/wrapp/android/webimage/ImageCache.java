@@ -45,6 +45,12 @@ public class ImageCache {
   private static File cacheDirectory;
   private static Map<String, SoftReference<Drawable>> drawableCache = new HashMap<String, SoftReference<Drawable>>();
 
+  public static boolean isImageCached(URL imageUrl) {
+    final String imageKey = getKeyForUrl(imageUrl);
+    final File cacheFile = new File(getCacheDirectory(), imageKey);
+    return cacheFile.exists();
+  }
+
   public static Drawable loadImage(ImageRequest request) {
     final String imageKey = getKeyForUrl(request.imageUrl);
     LogWrapper.logMessage("Loading image: " + request.imageUrl);
