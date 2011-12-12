@@ -156,7 +156,6 @@ public class ImageCache {
       bitmapDrawable.getBitmap().compress(Bitmap.CompressFormat.PNG, 100, outputStream);
       LogWrapper.logMessage("Saved image " + imageKey + " to file cache");
       outputStream.flush();
-      outputStream.close();
     }
     catch(IOException e) {
       LogWrapper.logException(e);
