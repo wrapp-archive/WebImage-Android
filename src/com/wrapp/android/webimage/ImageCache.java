@@ -273,7 +273,6 @@ public class ImageCache {
         drawableCache.clear();
       }
     }
-    System.gc();
   }
 
 
