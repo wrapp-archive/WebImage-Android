@@ -24,4 +24,5 @@
   <string name="app_name">WebImageList</string>
   <string name="menu_refresh">Refresh</string>
   <string name="menu_clear_caches">Clear Caches</string>
+  <string name="menu_show_memory_use">Show Memory Use</string>
 </resources>

@@ -39,7 +39,6 @@ public class ImageCache {
   private static final long CACHE_RECHECK_AGE_IN_SEC = ONE_DAY_IN_SEC;
   private static final long CACHE_RECHECK_AGE_IN_MS = CACHE_RECHECK_AGE_IN_SEC * 1000;
   private static final long CACHE_EXPIRATION_AGE_IN_SEC = ONE_DAY_IN_SEC * 30;
-  private static final long CACHE_EXPIRATION_AGE_IN_MS = CACHE_EXPIRATION_AGE_IN_SEC * 1000;
   private static final String DEFAULT_CACHE_SUBDIRECTORY_NAME = "images";
 
   private static File cacheDirectory;
@@ -273,7 +272,6 @@ public class ImageCache {
         drawableCache.clear();
       }
     }
-    System.gc();
   }
 
 

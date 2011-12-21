@@ -27,6 +27,7 @@ import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpHead;
 import org.apache.http.impl.client.DefaultHttpClient;
 
 import java.io.*;
@@ -44,7 +45,16 @@ public class ImageDownloader {
     InputStream contentInputStream = null;
 
     try {
-      HttpResponse response = getHttpResponseForImage(imageUrl);
+      final String imageUrlString = imageUrl.toString();
+      if(imageUrlString == null || imageUrlString.length() == 0) {
+        throw new Exception("Passed empty URL");
+      }
+      LogWrapper.logMessage("Requesting image '" + imageUrlString + "'");
+      final HttpClient httpClient = new DefaultHttpClient();
+      httpClient.getParams().setParameter("http.socket.timeout", CONNECTION_TIMEOUT_IN_MS);
+      final HttpGet httpGet = new HttpGet(imageUrlString);
+      final HttpResponse response = httpClient.execute(httpGet);
+
       responseEntity = response.getEntity();
       if(responseEntity == null) {
         throw new Exception("No response entity for image: " + imageUrl.toString());
@@ -84,7 +94,16 @@ public class ImageDownloader {
     Date expirationDate = new Date();
 
     try {
-      HttpResponse response = getHttpResponseForImage(imageUrl);
+      final String imageUrlString = imageUrl.toString();
+      if(imageUrlString == null || imageUrlString.length() == 0) {
+        throw new Exception("Passed empty URL");
+      }
+      LogWrapper.logMessage("Requesting image '" + imageUrlString + "'");
+      final HttpClient httpClient = new DefaultHttpClient();
+      httpClient.getParams().setParameter("http.socket.timeout", CONNECTION_TIMEOUT_IN_MS);
+      final HttpHead httpHead = new HttpHead(imageUrlString);
+      final HttpResponse response = httpClient.execute(httpHead);
+
       Header[] header = response.getHeaders("Expires");
       if(header != null && header.length > 0) {
         SimpleDateFormat dateFormat = new SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss Z", Locale.US);
@@ -97,18 +116,5 @@ public class ImageDownloader {
     }
 
     return expirationDate;
-  }
-
-  private static HttpResponse getHttpResponseForImage(URL url) throws Exception {
-    String imageUrl = url.toString();
-    if(imageUrl == null || imageUrl.length() == 0) {
-      throw new Exception("Passed empty URL");
-    }
-    LogWrapper.logMessage("Requesting image '" + imageUrl + "'");
-    HttpClient httpClient = new DefaultHttpClient();
-    httpClient.getParams().setParameter("http.socket.timeout", CONNECTION_TIMEOUT_IN_MS);
-    HttpGet httpGet = new HttpGet(imageUrl);
-    HttpResponse response = httpClient.execute(httpGet);
-    return response;
   }
 }
