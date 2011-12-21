@@ -21,14 +21,18 @@
 
 package com.wrapp.android.webimagelist;
 
+import android.app.ActivityManager;
 import android.app.ListActivity;
+import android.content.Context;
 import android.os.Bundle;
+import android.os.Debug;
 import android.os.Handler;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.Window;
+import android.widget.Toast;
 import com.wrapp.android.webimage.WebImage;
 import com.wrapp.android.webimage.WebImageView;
 
@@ -90,10 +94,9 @@ public class WebImageListActivity extends ListActivity implements WebImageView.L
   }
 
   /**
-   * When the low memory warning is received, tell the WebImage class to free all memory caches. I'm
-   * a bit suspicious of Android's memory management techniques, since I never see this method get
-   * called even right before out of memory exceptions are thrown. Anyways, it's good practice to call
-   * this method periodically to free up space to keep your app running fast.
+   * When the low memory warning is received, tell the WebImage class to free all memory caches. Note
+   * that this method is called when the system is short on memory, not your app. If your app hits the
+   * memory limit, this method will not be called.
    */
   @Override
   public void onLowMemory() {
@@ -119,6 +122,9 @@ public class WebImageListActivity extends ListActivity implements WebImageView.L
         WebImage.clearMemoryCaches();
         WebImage.clearOldCacheFiles(0);
         refresh();
+        break;
+      case R.id.MainMenuShowMemoryUse:
+        showMemoryUsageToast();
         break;
       default:
         refresh();
@@ -171,5 +177,16 @@ public class WebImageListActivity extends ListActivity implements WebImageView.L
         setProgressBarIndeterminateVisibility(false);
       }
     }
+  }
+
+  public void showMemoryUsageToast() {
+    final int heapKbAllocated = (int)(Debug.getNativeHeapAllocatedSize() / 1024);
+    final int heapKbTotal = (int)(Debug.getNativeHeapSize() / 1024);
+    final int heapPercent = (int)(100.0f * heapKbAllocated / heapKbTotal);
+    ActivityManager activityManager = (ActivityManager)getSystemService(Context.ACTIVITY_SERVICE);
+    final int memoryClass = activityManager.getMemoryClass();
+    final String toastMessage = "Heap: " + heapKbAllocated + "K used (" + heapPercent + "%)\nMemory class: " + memoryClass;
+    Toast toast = Toast.makeText(this, toastMessage, Toast.LENGTH_LONG);
+    toast.show();
   }
 }
