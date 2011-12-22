@@ -29,10 +29,16 @@ import java.util.LinkedList;
 import java.util.Queue;
 
 public class ImageLoader {
+  // Number of threads which download and load images simultaneously. From my testing, 2 is the best
+  // value here. Although most servers function quite efficiently with up to 4 simultaneous requests,
+  // lower performance phones will start to choke when up to 4 threads are delivering drawables.
   private static final int NUM_WORKERS = 2;
-  private static ImageLoader staticInstance;
-  private final Queue<ImageRequest> pendingRequests;
 
+  // Static singleton instance
+  private static ImageLoader staticInstance;
+
+  // Instance variables
+  private final Queue<ImageRequest> pendingRequests;
 
   private static class Worker extends Thread {
     @Override
