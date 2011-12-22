@@ -39,8 +39,11 @@ public class ImageLoader {
 
   // Instance variables
   private final Queue<ImageRequest> pendingRequests;
+  private final Worker[] workerPool;
 
   private static class Worker extends Thread {
+    public ImageRequest.Listener currentListener = null;
+
     @Override
     public void run() {
       final Queue<ImageRequest> requestQueue = getInstance().pendingRequests;
@@ -65,7 +68,12 @@ public class ImageLoader {
     }
 
     private ImageRequest getNextRequest(Queue<ImageRequest> requestQueue) {
+      // Pop the first element from the pending request queue
       ImageRequest request = requestQueue.poll();
+
+      // Go through the list of pending requests, pruning duplicate requests and using the latest URL
+      // requested by a particular listener. It is quite common that a listener will request multiple
+      // URL's, especially when a ListView is scrolling quickly.
       Iterator requestIterator = requestQueue.iterator();
       while(requestIterator.hasNext()) {
         ImageRequest checkRequest = (ImageRequest)requestIterator.next();
@@ -84,12 +92,34 @@ public class ImageLoader {
           }
         }
       }
+
+      // Finally, look at the other worker threads to see what they are processing. If one of them
+      // is processing the same listener as this request, then invalidate that listener so the correct
+      // image will be delivered by this worker instead.
+      for(Worker worker : getInstance().workerPool) {
+        if(worker.getId() != getId()) {
+          if(worker.currentListener == request.listener) {
+            worker.currentListener = null;
+          }
+        }
+      }
+
       return request;
     }
 
     private void processRequest(ImageRequest request) {
       try {
+        currentListener = request.listener;
         Drawable drawable = ImageCache.loadImage(request);
+
+        // While the drawable was loading, another thread may have invalidated our listener. If so,
+        // then return right away, but only after informing the (real) listener that this request
+        // has been cancelled.
+        if(currentListener == null) {
+          request.listener.onDrawableLoadCancelled();
+          return;
+        }
+
         if(drawable == null) {
           request.listener.onDrawableError("Failed to load image");
         }
@@ -109,6 +139,7 @@ public class ImageLoader {
             }
           }
           request.listener.onDrawableLoaded(drawable);
+          currentListener = null;
         }
       }
       catch(Exception e) {
@@ -130,7 +161,7 @@ public class ImageLoader {
 
   private ImageLoader() {
     pendingRequests = new LinkedList<ImageRequest>();
-    final Worker[] workerPool = new Worker[NUM_WORKERS];
+    workerPool = new Worker[NUM_WORKERS];
     for(int i = 0; i < NUM_WORKERS; i++) {
       workerPool[i] = new Worker();
       workerPool[i].start();
