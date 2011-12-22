@@ -26,7 +26,7 @@ import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 
 import java.io.*;
-import java.lang.ref.SoftReference;
+import java.lang.ref.WeakReference;
 import java.net.URL;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -42,7 +42,7 @@ public class ImageCache {
   private static final String DEFAULT_CACHE_SUBDIRECTORY_NAME = "images";
 
   private static File cacheDirectory;
-  private static Map<String, SoftReference<Drawable>> drawableCache = new HashMap<String, SoftReference<Drawable>>();
+  private static Map<String, WeakReference<Drawable>> drawableCache = new HashMap<String, WeakReference<Drawable>>();
 
   public static boolean isImageCached(URL imageUrl) {
     final String imageKey = getKeyForUrl(imageUrl);
@@ -141,7 +141,7 @@ public class ImageCache {
 
   private static void saveImageInMemoryCache(String imageKey, final Drawable drawable) {
     synchronized(drawableCache) {
-      drawableCache.put(imageKey, new SoftReference<Drawable>(drawable));
+      drawableCache.put(imageKey, new WeakReference<Drawable>(drawable));
     }
   }
 
@@ -264,7 +264,7 @@ public class ImageCache {
       synchronized(drawableCache) {
         LogWrapper.logMessage("Emptying in-memory drawable cache");
         for(String key : drawableCache.keySet()) {
-          SoftReference reference = drawableCache.get(key);
+          WeakReference reference = drawableCache.get(key);
           if(reference != null) {
             reference.clear();
           }
