@@ -126,6 +126,9 @@ public class WebImageListActivity extends ListActivity implements WebImageView.L
       case R.id.MainMenuShowMemoryUse:
         showMemoryUsageToast();
         break;
+      case R.id.MainMenuToggleMemoryCache:
+        toggleMemoryCache();
+        break;
       default:
         refresh();
         break;
@@ -177,6 +180,15 @@ public class WebImageListActivity extends ListActivity implements WebImageView.L
         setProgressBarIndeterminateVisibility(false);
       }
     }
+  }
+
+  private void toggleMemoryCache() {
+    final WebImageListAdapter webImageListAdapter = (WebImageListAdapter)getListAdapter();
+    final boolean shouldCacheImagesInMemory = !webImageListAdapter.getShouldCacheImagesInMemory();
+    webImageListAdapter.setShouldCacheImagesInMemory(shouldCacheImagesInMemory);
+    final String toastMessage = "Memory cache: " + (shouldCacheImagesInMemory ? "enabled" : "disabled");
+    Toast toast = Toast.makeText(this, toastMessage, Toast.LENGTH_SHORT);
+    toast.show();
   }
 
   public void showMemoryUsageToast() {

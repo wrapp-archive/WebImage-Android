@@ -30,7 +30,9 @@ public class WebImageListAdapter extends BaseAdapter {
   private static final boolean USE_AWESOME_IMAGES = true;
   private static final int NUM_IMAGES = 100;
   private static final int IMAGE_SIZE = 100;
+
   private WebImageView.Listener listener;
+  private boolean shouldCacheImagesInMemory = true;
 
   public WebImageListAdapter(WebImageView.Listener listener) {
     this.listener = listener;
@@ -68,8 +70,16 @@ public class WebImageListAdapter extends BaseAdapter {
       containerView = new WebImageContainerView(parentViewGroup.getContext());
     }
 
-    containerView.setImageUrl(getImageUrl(i), listener);
+    containerView.setImageUrl(getImageUrl(i), listener, shouldCacheImagesInMemory);
     containerView.setImageText("Image #" + i);
     return containerView;
+  }
+
+  public boolean getShouldCacheImagesInMemory() {
+    return shouldCacheImagesInMemory;
+  }
+
+  public void setShouldCacheImagesInMemory(boolean shouldCacheImagesInMemory) {
+    this.shouldCacheImagesInMemory = shouldCacheImagesInMemory;
   }
 }
