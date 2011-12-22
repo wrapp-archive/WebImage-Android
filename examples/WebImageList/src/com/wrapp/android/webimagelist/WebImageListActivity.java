@@ -121,6 +121,8 @@ public class WebImageListActivity extends ListActivity implements WebImageView.L
         WebImage.cancelAllRequests();
         WebImage.clearMemoryCaches();
         WebImage.clearOldCacheFiles(0);
+        Toast toast = Toast.makeText(this, "Memory and disk caches cleared", Toast.LENGTH_SHORT);
+        toast.show();
         refresh();
         break;
       case R.id.MainMenuShowMemoryUse:
