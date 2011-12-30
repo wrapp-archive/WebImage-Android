@@ -29,8 +29,11 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpHead;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.params.CoreConnectionPNames;
+import org.apache.http.params.HttpParams;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -38,6 +41,7 @@ import java.util.Locale;
 
 public class ImageDownloader {
   private static final int CONNECTION_TIMEOUT_IN_MS = 10 * 1000;
+  private static final int DEFAULT_BUFFER_SIZE = 8192;
 
   public static Drawable loadImage(final String imageKey, final URL imageUrl) {
     Drawable drawable = null;
@@ -51,7 +55,10 @@ public class ImageDownloader {
       }
       LogWrapper.logMessage("Requesting image '" + imageUrlString + "'");
       final HttpClient httpClient = new DefaultHttpClient();
-      httpClient.getParams().setParameter("http.socket.timeout", CONNECTION_TIMEOUT_IN_MS);
+      final HttpParams httpParams = httpClient.getParams();
+      httpParams.setParameter(CoreConnectionPNames.SO_TIMEOUT, CONNECTION_TIMEOUT_IN_MS);
+      httpParams.setParameter(CoreConnectionPNames.CONNECTION_TIMEOUT, CONNECTION_TIMEOUT_IN_MS);
+      httpParams.setParameter(CoreConnectionPNames.SOCKET_BUFFER_SIZE, DEFAULT_BUFFER_SIZE);
       final HttpGet httpGet = new HttpGet(imageUrlString);
       final HttpResponse response = httpClient.execute(httpGet);
 
@@ -100,7 +107,10 @@ public class ImageDownloader {
       }
       LogWrapper.logMessage("Requesting image '" + imageUrlString + "'");
       final HttpClient httpClient = new DefaultHttpClient();
-      httpClient.getParams().setParameter("http.socket.timeout", CONNECTION_TIMEOUT_IN_MS);
+      final HttpParams httpParams = httpClient.getParams();
+      httpParams.setParameter(CoreConnectionPNames.SO_TIMEOUT, CONNECTION_TIMEOUT_IN_MS);
+      httpParams.setParameter(CoreConnectionPNames.CONNECTION_TIMEOUT, CONNECTION_TIMEOUT_IN_MS);
+      httpParams.setParameter(CoreConnectionPNames.SOCKET_BUFFER_SIZE, DEFAULT_BUFFER_SIZE);
       final HttpHead httpHead = new HttpHead(imageUrlString);
       final HttpResponse response = httpClient.execute(httpHead);
 
