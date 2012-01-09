@@ -21,6 +21,7 @@
 
 package com.wrapp.android.webimagelist;
 
+import android.graphics.BitmapFactory;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
@@ -34,6 +35,8 @@ public class WebImageListAdapter extends BaseAdapter {
 
   private WebImageView.Listener listener;
   private boolean shouldCacheImagesInMemory = true;
+  private boolean shouldRestrictMemoryUsage = false;
+  private static BitmapFactory.Options options = new BitmapFactory.Options();
 
   public WebImageListAdapter(WebImageView.Listener listener) {
     this.listener = listener;
@@ -77,7 +80,7 @@ public class WebImageListAdapter extends BaseAdapter {
       containerView = new WebImageContainerView(parentViewGroup.getContext());
     }
 
-    containerView.setImageUrl(getImageUrl(i), listener, shouldCacheImagesInMemory);
+    containerView.setImageUrl(getImageUrl(i), listener, shouldCacheImagesInMemory, options);
     containerView.setImageText("Image #" + i);
     return containerView;
   }

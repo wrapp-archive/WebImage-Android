@@ -22,6 +22,7 @@
 package com.wrapp.android.webimagelist;
 
 import android.content.Context;
+import android.graphics.BitmapFactory;
 import android.graphics.drawable.Drawable;
 import android.util.AttributeSet;
 import android.view.LayoutInflater;
@@ -65,12 +66,12 @@ public class WebImageContainerView extends RelativeLayout {
     imageText = (TextView)findViewById(R.id.WebImageViewText);
   }
 
-  public void setImageUrl(String imageUrlString, WebImageView.Listener listener, boolean shouldCacheImagesInMemory) {
+  public void setImageUrl(String imageUrlString, WebImageView.Listener listener, boolean shouldCacheImagesInMemory, BitmapFactory.Options options) {
     try {
       URL imageUrl = new URL(imageUrlString);
       webImageView.setImageResource(R.drawable.person_placeholder);
       webImageView.setListener(listener);
-      webImageView.setImageUrl(imageUrl, shouldCacheImagesInMemory, errorImage);
+      webImageView.setImageUrl(imageUrl, shouldCacheImagesInMemory, options, errorImage);
     }
     catch(MalformedURLException e) {
       e.printStackTrace();
