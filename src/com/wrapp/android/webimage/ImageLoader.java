@@ -146,7 +146,7 @@ public class ImageLoader {
       catch(Exception e) {
         // Catch any other random exceptions which may be thrown when loading the image. Although
         // the ImageLoader and ImageCache classes do rigorous try/catch checking, it doesn't hurt
-        // to have a last line of defence.
+        // to have a last line of defense.
         request.listener.onBitmapLoadError(e.getMessage());
       }
     }

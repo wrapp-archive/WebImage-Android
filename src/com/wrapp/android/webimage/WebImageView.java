@@ -93,7 +93,8 @@ public class WebImageView extends ImageView implements ImageRequest.Listener {
    * only for activities which re-use the same images frequently.
    * @param options Options to use when loading the image. See the documentation for {@link BitmapFactory.Options}
    * for more details. Can be null.
-   * @param errorImage Drawable to be displayed in case the image could not be loaded.
+   * @param errorImage Drawable to be displayed in case the image could not be loaded. If null, no new image
+   * will be displayed on error.
    */
   public void setImageUrl(URL imageUrl, boolean cacheInMemory, BitmapFactory.Options options, Drawable errorImage) {
     this.errorImage = errorImage;

@@ -53,6 +53,8 @@ public class ImageCache {
     final String imageKey = getKeyForUrl(request.imageUrl);
     LogWrapper.logMessage("Loading image: " + request.imageUrl);
 
+    // Always check the memory cache first, even if the caller doesn't request this image to be cached
+    // there. This lookup is pretty fast, so it's a good performance gain.
     Bitmap bitmap = loadImageFromMemoryCache(imageKey);
     if(bitmap != null) {
       LogWrapper.logMessage("Found image " + request.imageUrl + " in memory cache");
