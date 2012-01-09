@@ -21,7 +21,8 @@
 
 package com.wrapp.android.webimage;
 
-import android.graphics.drawable.Drawable;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -43,8 +44,7 @@ public class ImageDownloader {
   private static final int CONNECTION_TIMEOUT_IN_MS = 10 * 1000;
   private static final int DEFAULT_BUFFER_SIZE = 8192;
 
-  public static Drawable loadImage(final String imageKey, final URL imageUrl) {
-    Drawable drawable = null;
+  public static boolean loadImage(final String imageKey, final URL imageUrl) {
     HttpEntity responseEntity = null;
     InputStream contentInputStream = null;
 
@@ -71,14 +71,18 @@ public class ImageDownloader {
         throw new Exception("No content stream for image: " + imageUrl.toString());
       }
 
-      drawable = Drawable.createFromStream(contentInputStream, imageKey);
+      Bitmap bitmap = BitmapFactory.decodeStream(contentInputStream);
+      ImageCache.saveImageInFileCache(imageKey, bitmap);
       LogWrapper.logMessage("Downloaded image: " + imageUrl.toString());
+      bitmap.recycle();
     }
     catch(IOException e) {
       LogWrapper.logException(e);
+      return false;
     }
     catch(Exception e) {
       LogWrapper.logException(e);
+      return false;
     }
     finally {
       try {
@@ -94,7 +98,7 @@ public class ImageDownloader {
       }
     }
 
-    return drawable;
+    return true;
   }
 
   public static Date getServerTimestamp(final URL imageUrl) {

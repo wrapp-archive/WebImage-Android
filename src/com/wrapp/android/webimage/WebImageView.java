@@ -22,6 +22,8 @@
 package com.wrapp.android.webimage;
 
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.drawable.Drawable;
 import android.os.Handler;
 import android.util.AttributeSet;
@@ -80,7 +82,7 @@ public class WebImageView extends ImageView implements ImageRequest.Listener {
    */
   public void setImageUrl(URL imageUrl) {
     //noinspection NullableProblems
-    setImageUrl(imageUrl, false, null);
+    setImageUrl(imageUrl, false, null, null);
   }
 
   /**
@@ -89,43 +91,33 @@ public class WebImageView extends ImageView implements ImageRequest.Listener {
    * @param cacheInMemory True to keep the downloaded drawable in the memory cache. Set to true for faster
    * access, but be careful about using this flag, as it can consume a lot of memory. This is recommended
    * only for activities which re-use the same images frequently.
-   */
-  public void setImageUrl(URL imageUrl, boolean cacheInMemory) {
-    //noinspection NullableProblems
-    setImageUrl(imageUrl, cacheInMemory, null);
-  }
-
-  /**
-   * Load an image asynchronously from the web
-   * @param imageUrl Image URL to download image from
-   * @param cacheInMemory True to keep the downloaded drawable in the memory cache. Set to true for faster
-   * access, but be careful about using this flag, as it can consume a lot of memory. This is recommended
-   * only for activities which re-use the same images frequently.
+   * @param options Options to use when loading the image. See the documentation for {@link BitmapFactory.Options}
+   * for more details. Can be null.
    * @param errorImage Drawable to be displayed in case the image could not be loaded.
    */
-  public void setImageUrl(URL imageUrl, boolean cacheInMemory, Drawable errorImage) {
+  public void setImageUrl(URL imageUrl, boolean cacheInMemory, BitmapFactory.Options options, Drawable errorImage) {
     this.errorImage = errorImage;
     if(this.listener != null) {
       listener.onImageLoadStarted();
     }
-    ImageLoader.load(imageUrl, this, cacheInMemory);
+    ImageLoader.load(imageUrl, this, cacheInMemory, options);
   }
 
   /**
    * This method is called when the drawable has been downloaded (or retreived from cache) and is
    * ready to be displayed. If you override this class, then you should not call this method via
-   * super.onDrawableLoaded(). Instead, handle the drawable as necessary (ie, resizing or other
+   * super.onBitmapLoaded(). Instead, handle the drawable as necessary (ie, resizing or other
    * transformations), and then call postToGuiThread() to display the image from the correct thread.
    *
    * If you only need a callback to be notified about the drawable being loaded to update other
    * GUI elements and whatnot, then you should override onImageLoaded() instead.
    *
-   * @param drawable Drawable returned from web/cache
+   * @param bitmap Bitmap returned from web/cache
    */
-  public void onDrawableLoaded(final Drawable drawable) {
+  public void onBitmapLoaded(final Bitmap bitmap) {
     postToGuiThread(new Runnable() {
       public void run() {
-        setImageDrawable(drawable);
+        setImageBitmap(bitmap);
       }
     });
     if(listener != null) {
@@ -138,7 +130,7 @@ public class WebImageView extends ImageView implements ImageRequest.Listener {
    * to react to these events, you should override onImageError() instead.
    * @param message Error message (non-localized)
    */
-  public void onDrawableError(String message) {
+  public void onBitmapLoadError(String message) {
     LogWrapper.logMessage(message);
     postToGuiThread(new Runnable() {
       public void run() {
@@ -157,7 +149,7 @@ public class WebImageView extends ImageView implements ImageRequest.Listener {
    * of reasons, including the activity being closed or scrolling rapidly in a ListView. For this
    * reason it is recommended not to do so much work in this method.
    */
-  public void onDrawableLoadCancelled() {
+  public void onBitmapLoadCancelled() {
     if(listener != null) {
       listener.onImageLoadCancelled();
     }

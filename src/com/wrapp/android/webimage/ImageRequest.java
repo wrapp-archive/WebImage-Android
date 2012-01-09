@@ -21,7 +21,8 @@
 
 package com.wrapp.android.webimage;
 
-import android.graphics.drawable.Drawable;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 
 import java.net.URL;
 
@@ -29,16 +30,22 @@ public final class ImageRequest {
   public URL imageUrl;
   public Listener listener;
   public boolean cacheInMemory;
+  public BitmapFactory.Options loadOptions;
 
   public interface Listener {
-    public void onDrawableLoaded(final Drawable drawable);
-    public void onDrawableError(String message);
-    public void onDrawableLoadCancelled();
+    public void onBitmapLoaded(final Bitmap bitmap);
+    public void onBitmapLoadError(String message);
+    public void onBitmapLoadCancelled();
   }
 
-  public ImageRequest(URL imageUrl, Listener listener, boolean cacheInMemory) {
+  public ImageRequest(URL imageUrl, Listener listener) {
+    this(imageUrl, listener, false, null);
+  }
+
+  public ImageRequest(URL imageUrl, Listener listener, boolean cacheInMemory, BitmapFactory.Options options) {
     this.imageUrl = imageUrl;
     this.listener = listener;
     this.cacheInMemory = cacheInMemory;
+    this.loadOptions = options;
   }
 }

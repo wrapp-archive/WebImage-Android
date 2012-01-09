@@ -21,6 +21,8 @@
 
 package com.wrapp.android.webimage;
 
+import android.graphics.BitmapFactory;
+
 import java.net.URL;
 
 /**
@@ -38,9 +40,11 @@ public class WebImage {
    * Be careful about using this flag; although WebImage tries to minimize memory consumption and
    * uses soft references, it is easy to exceed the device's VM limits and get OutOfMemory
    * exceptions.
+   * @param options Options to use when loading the image. See the documentation for {@link BitmapFactory.Options}
+   * for more details. Can be null.
    */
-  public static void load(URL imageUrl, ImageRequest.Listener listener, boolean cacheInMemory) {
-    ImageLoader.load(imageUrl, listener, cacheInMemory);
+  public static void load(URL imageUrl, ImageRequest.Listener listener, boolean cacheInMemory, BitmapFactory.Options options) {
+    ImageLoader.load(imageUrl, listener, cacheInMemory, options);
   }
 
   /**

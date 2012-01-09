@@ -21,7 +21,8 @@
 
 package com.wrapp.android.webimage;
 
-import android.graphics.drawable.Drawable;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 
 import java.net.URL;
 import java.util.Iterator;
@@ -80,13 +81,13 @@ public class ImageLoader {
         if(request.listener.equals(checkRequest.listener)) {
           if(request.imageUrl.equals(checkRequest.imageUrl)) {
             // Ignore duplicate requests. This is common when doing view recycling in list adapters.
-            request.listener.onDrawableLoadCancelled();
+            request.listener.onBitmapLoadCancelled();
             requestIterator.remove();
           }
           else {
             // If this request in the queue was made by the same listener but is for a new URL,
             // then use that request instead and remove it from the queue.
-            request.listener.onDrawableLoadCancelled();
+            request.listener.onBitmapLoadCancelled();
             request = checkRequest;
             requestIterator.remove();
           }
@@ -110,18 +111,18 @@ public class ImageLoader {
     private void processRequest(ImageRequest request) {
       try {
         currentListener = request.listener;
-        Drawable drawable = ImageCache.loadImage(request);
+        Bitmap bitmap = ImageCache.loadImage(request);
 
         // While the drawable was loading, another thread may have invalidated our listener. If so,
         // then return right away, but only after informing the (real) listener that this request
         // has been cancelled.
         if(currentListener == null) {
-          request.listener.onDrawableLoadCancelled();
+          request.listener.onBitmapLoadCancelled();
           return;
         }
 
-        if(drawable == null) {
-          request.listener.onDrawableError("Failed to load image");
+        if(bitmap == null) {
+          request.listener.onBitmapLoadError("Failed to load image");
         }
         else {
           // When this request has completed successfully, check the pending requests queue again
@@ -133,12 +134,12 @@ public class ImageLoader {
             for(ImageRequest checkRequest : requestQueue) {
               if(request.listener.equals(checkRequest.listener) &&
                 !request.imageUrl.equals(checkRequest.imageUrl)) {
-                request.listener.onDrawableLoadCancelled();
+                request.listener.onBitmapLoadCancelled();
                 return;
               }
             }
           }
-          request.listener.onDrawableLoaded(drawable);
+          request.listener.onBitmapLoaded(bitmap);
           currentListener = null;
         }
       }
@@ -146,7 +147,7 @@ public class ImageLoader {
         // Catch any other random exceptions which may be thrown when loading the image. Although
         // the ImageLoader and ImageCache classes do rigorous try/catch checking, it doesn't hurt
         // to have a last line of defence.
-        request.listener.onDrawableError(e.getMessage());
+        request.listener.onBitmapLoadError(e.getMessage());
       }
     }
   }
@@ -168,10 +169,14 @@ public class ImageLoader {
     }
   }
 
-  public static void load(URL imageUrl, ImageRequest.Listener listener, boolean cacheInMemory) {
+  public static void load(URL imageUrl, ImageRequest.Listener listener) {
+    load(imageUrl, listener, false, null);
+  }
+
+  public static void load(URL imageUrl, ImageRequest.Listener listener, boolean cacheInMemory, BitmapFactory.Options options) {
     Queue<ImageRequest> requestQueue = getInstance().pendingRequests;
     synchronized(requestQueue) {
-      requestQueue.add(new ImageRequest(imageUrl, listener, cacheInMemory));
+      requestQueue.add(new ImageRequest(imageUrl, listener, cacheInMemory, options));
       requestQueue.notify();
     }
   }
@@ -180,7 +185,7 @@ public class ImageLoader {
     final Queue<ImageRequest> requestQueue = getInstance().pendingRequests;
     synchronized(requestQueue) {
       for(ImageRequest request : requestQueue) {
-        request.listener.onDrawableLoadCancelled();
+        request.listener.onBitmapLoadCancelled();
       }
       requestQueue.clear();
     }

@@ -22,8 +22,7 @@
 package com.wrapp.android.webimage;
 
 import android.graphics.Bitmap;
-import android.graphics.drawable.BitmapDrawable;
-import android.graphics.drawable.Drawable;
+import android.graphics.BitmapFactory;
 
 import java.io.*;
 import java.lang.ref.WeakReference;
@@ -42,7 +41,7 @@ public class ImageCache {
   private static final String DEFAULT_CACHE_SUBDIRECTORY_NAME = "images";
 
   private static File cacheDirectory;
-  private static Map<String, WeakReference<Drawable>> drawableCache = new HashMap<String, WeakReference<Drawable>>();
+  private static Map<String, WeakReference<Bitmap>> memoryCache = new HashMap<String, WeakReference<Bitmap>>();
 
   public static boolean isImageCached(URL imageUrl) {
     final String imageKey = getKeyForUrl(imageUrl);
@@ -50,48 +49,49 @@ public class ImageCache {
     return cacheFile.exists();
   }
 
-  public static Drawable loadImage(ImageRequest request) {
+  public static Bitmap loadImage(ImageRequest request) {
     final String imageKey = getKeyForUrl(request.imageUrl);
     LogWrapper.logMessage("Loading image: " + request.imageUrl);
 
-    Drawable drawable = loadImageFromMemoryCache(imageKey);
-    if(drawable != null) {
+    Bitmap bitmap = loadImageFromMemoryCache(imageKey);
+    if(bitmap != null) {
       LogWrapper.logMessage("Found image " + request.imageUrl + " in memory cache");
-      return drawable;
+      return bitmap;
     }
 
-    drawable = loadImageFromFileCache(imageKey, request.imageUrl);
-    if(drawable != null) {
+    bitmap = loadImageFromFileCache(imageKey, request.imageUrl, request.loadOptions);
+    if(bitmap != null) {
       LogWrapper.logMessage("Found image " + request.imageUrl + " in file cache");
-      return drawable;
+      return bitmap;
     }
 
-    drawable = ImageDownloader.loadImage(imageKey, request.imageUrl);
-    if(drawable != null) {
-      saveImageInFileCache(imageKey, drawable);
-      if(request.cacheInMemory) {
-        saveImageInMemoryCache(imageKey, drawable);
+    if(ImageDownloader.loadImage(imageKey, request.imageUrl)) {
+      bitmap = loadImageFromFileCache(imageKey, request.imageUrl, request.loadOptions);
+      if(bitmap != null) {
+        if(request.cacheInMemory) {
+          saveImageInMemoryCache(imageKey, bitmap);
+        }
+        return bitmap;
       }
-      return drawable;
     }
 
     LogWrapper.logMessage("Could not load drawable, returning null");
-    return drawable;
+    return bitmap;
   }
 
-  private static Drawable loadImageFromMemoryCache(final String imageKey) {
-    synchronized(drawableCache) {
-      if(drawableCache.containsKey(imageKey)) {
+  private static Bitmap loadImageFromMemoryCache(final String imageKey) {
+    synchronized(memoryCache) {
+      if(memoryCache.containsKey(imageKey)) {
         // Apparently Android's SoftReference can sometimes free objects too early, see:
         // http://groups.google.com/group/android-developers/browse_thread/thread/ebabb0dadf38acc1
         // If that happens then it's no big deal, as this class will simply re-load the image
         // from file, but if that is the case then we should be polite and remove the imageKey
         // from the cache to reflect the actual caching state of this image.
-        final Drawable drawable = drawableCache.get(imageKey).get();
-        if(drawable == null) {
-          drawableCache.remove(imageKey);
+        final Bitmap bitmap = memoryCache.get(imageKey).get();
+        if(bitmap == null) {
+          memoryCache.remove(imageKey);
         }
-        return drawable;
+        return bitmap;
       }
       else {
         return null;
@@ -99,8 +99,8 @@ public class ImageCache {
     }
   }
 
-  private static Drawable loadImageFromFileCache(final String imageKey, final URL imageUrl) {
-    Drawable drawable = null;
+  private static Bitmap loadImageFromFileCache(final String imageKey, final URL imageUrl, BitmapFactory.Options options) {
+    Bitmap bitmap = null;
 
     File cacheFile = new File(getCacheDirectory(), imageKey);
     if(cacheFile.exists()) {
@@ -110,14 +110,15 @@ public class ImageCache {
         if(fileAgeInMs > CACHE_RECHECK_AGE_IN_MS) {
           Date expirationDate = ImageDownloader.getServerTimestamp(imageUrl);
           if(expirationDate.after(now)) {
-            drawable = Drawable.createFromStream(new FileInputStream(cacheFile), imageKey);
+            // TODO: decodeFileDescriptor might be faster, see http://stackoverflow.com/a/7116158/14302
+            bitmap = BitmapFactory.decodeStream(new FileInputStream(cacheFile), null, options);
             LogWrapper.logMessage("Cached version of " + imageUrl.toString() + " is still current, updating timestamp");
             if(!cacheFile.setLastModified(now.getTime())) {
               // Ugh, it seems that in some cases this call will always return false and refuse to update the timestamp
               // For more info, see: http://code.google.com/p/android/issues/detail?id=18624
               // In these cases, we manually re-write the file to disk. Yes, that sucks, but it's better than loosing
               // the ability to do any intelligent file caching at all.
-              saveImageInFileCache(imageKey, drawable);
+              // TODO: saveImageInFileCache(imageKey, bitmap);
             }
           }
           else {
@@ -125,9 +126,10 @@ public class ImageCache {
           }
         }
         else {
-          drawable = Drawable.createFromStream(new FileInputStream(cacheFile), imageKey);
-          if(drawable == null) {
-            throw new Exception("Could not create drawable from image: " + imageUrl.toString());
+          // TODO: decodeFileDescriptor might be faster, see http://stackoverflow.com/a/7116158/14302
+          bitmap = BitmapFactory.decodeStream(new FileInputStream(cacheFile), null, options);
+          if(bitmap == null) {
+            throw new Exception("Could not create bitmap from image: " + imageUrl.toString());
           }
         }
       }
@@ -136,23 +138,22 @@ public class ImageCache {
       }
     }
 
-    return drawable;
+    return bitmap;
   }
 
-  private static void saveImageInMemoryCache(String imageKey, final Drawable drawable) {
-    synchronized(drawableCache) {
-      drawableCache.put(imageKey, new WeakReference<Drawable>(drawable));
+  private static void saveImageInMemoryCache(String imageKey, final Bitmap bitmap) {
+    synchronized(memoryCache) {
+      memoryCache.put(imageKey, new WeakReference<Bitmap>(bitmap));
     }
   }
 
-  private static void saveImageInFileCache(String imageKey, final Drawable drawable) {
+  public static void saveImageInFileCache(String imageKey, final Bitmap bitmap) {
     OutputStream outputStream = null;
 
     try {
       File cacheFile = new File(getCacheDirectory(), imageKey);
-      BitmapDrawable bitmapDrawable = (BitmapDrawable)drawable;
       outputStream = new FileOutputStream(cacheFile);
-      bitmapDrawable.getBitmap().compress(Bitmap.CompressFormat.PNG, 100, outputStream);
+      bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream);
       LogWrapper.logMessage("Saved image " + imageKey + " to file cache");
       outputStream.flush();
     }
@@ -260,16 +261,16 @@ public class ImageCache {
    * in the memory cache anymore.
    */
   public static void clearMemoryCaches() {
-    if(drawableCache != null) {
-      synchronized(drawableCache) {
-        LogWrapper.logMessage("Emptying in-memory drawable cache");
-        for(String key : drawableCache.keySet()) {
-          WeakReference reference = drawableCache.get(key);
+    if(memoryCache != null) {
+      synchronized(memoryCache) {
+        LogWrapper.logMessage("Emptying in-memory cache");
+        for(String key : memoryCache.keySet()) {
+          WeakReference reference = memoryCache.get(key);
           if(reference != null) {
             reference.clear();
           }
         }
-        drawableCache.clear();
+        memoryCache.clear();
       }
     }
   }
