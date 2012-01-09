@@ -129,6 +129,9 @@ public class WebImageListActivity extends ListActivity implements WebImageView.L
       case R.id.MainMenuToggleMemoryCache:
         toggleMemoryCache();
         break;
+      case R.id.MainMenuRestrictMemoryUse:
+        toggleRestrictMemoryUsage();
+        break;
       default:
         refresh();
         break;
@@ -180,6 +183,20 @@ public class WebImageListActivity extends ListActivity implements WebImageView.L
         setProgressBarIndeterminateVisibility(false);
       }
     }
+  }
+
+  private void toggleRestrictMemoryUsage() {
+    final WebImageListAdapter webImageListAdapter = (WebImageListAdapter)getListAdapter();
+    final boolean shouldRestrictMemoryUsage = !webImageListAdapter.getShouldRestrictMemoryUsage();
+    webImageListAdapter.setShouldRestrictMemoryUsage(shouldRestrictMemoryUsage);
+    webImageListAdapter.setShouldCacheImagesInMemory(shouldRestrictMemoryUsage);
+    WebImage.cancelAllRequests();
+    WebImage.clearMemoryCaches();
+    WebImage.clearOldCacheFiles(0);
+    final String toastMessage = "Restrict memory usage: " + (shouldRestrictMemoryUsage ? "enabled" : "disabled");
+    Toast toast = Toast.makeText(this, toastMessage, Toast.LENGTH_SHORT);
+    toast.show();
+    refresh();
   }
 
   private void toggleMemoryCache() {

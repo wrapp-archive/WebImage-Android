@@ -92,4 +92,16 @@ public class WebImageListAdapter extends BaseAdapter {
   public void setShouldCacheImagesInMemory(boolean shouldCacheImagesInMemory) {
     this.shouldCacheImagesInMemory = shouldCacheImagesInMemory;
   }
+
+  public boolean getShouldRestrictMemoryUsage() {
+    return shouldRestrictMemoryUsage;
+  }
+
+  public void setShouldRestrictMemoryUsage(boolean shouldRestrictMemoryUsage) {
+    this.shouldRestrictMemoryUsage = shouldRestrictMemoryUsage;
+    options.inInputShareable = shouldRestrictMemoryUsage;
+    options.inPurgeable = shouldRestrictMemoryUsage;
+    options.inSampleSize = shouldRestrictMemoryUsage ? 2 : 1;
+    options.inDither = shouldRestrictMemoryUsage;
+  }
 }
