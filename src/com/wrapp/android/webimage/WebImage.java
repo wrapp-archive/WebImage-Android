@@ -21,6 +21,7 @@
 
 package com.wrapp.android.webimage;
 
+import android.content.Context;
 import android.graphics.BitmapFactory;
 
 import java.net.URL;
@@ -34,6 +35,19 @@ public class WebImage {
    * Load an image from URL to the given listener. This is a non-blocking call which is run in
    * a background thread. It is safe to call this method multiple times; duplicate requests will
    * be ignored.
+   * @param context Context used for getting app's package name
+   * @param imageUrl URL to load the image from
+   * @param listener Object which will be notified when the request is complete
+   */
+  public static void load(final Context context, URL imageUrl, ImageRequest.Listener listener) {
+    ImageLoader.load(context, imageUrl, listener, false, null);
+  }
+
+  /**
+   * Load an image from URL to the given listener. This is a non-blocking call which is run in
+   * a background thread. It is safe to call this method multiple times; duplicate requests will
+   * be ignored.
+   * @param context Context used for getting app's package name
    * @param imageUrl URL to load the image from
    * @param listener Object which will be notified when the request is complete
    * @param cacheInMemory If true, then keep a copy of the drawable in memory for quick access.
@@ -43,19 +57,20 @@ public class WebImage {
    * @param options Options to use when loading the image. See the documentation for {@link BitmapFactory.Options}
    * for more details. Can be null.
    */
-  public static void load(URL imageUrl, ImageRequest.Listener listener, boolean cacheInMemory, BitmapFactory.Options options) {
-    ImageLoader.load(imageUrl, listener, cacheInMemory, options);
+  public static void load(final Context context, URL imageUrl, ImageRequest.Listener listener, boolean cacheInMemory, BitmapFactory.Options options) {
+    ImageLoader.load(context, imageUrl, listener, cacheInMemory, options);
   }
 
   /**
    * Check to see if an image has already been saved in the file cache. This can be useful when
    * you want to display an animation or other GUI notification in case the image has to be
    * fetched from the net.
+   * @param context Context used for getting app's package name
    * @param imageUrl URL to check
    * @return True if the image is in the file cache, false otherwise
    */
-  public static boolean isImageCached(URL imageUrl) {
-    return ImageCache.isImageCached(imageUrl);
+  public static boolean isImageCached(final Context context, URL imageUrl) {
+    return ImageCache.isImageCached(context, imageUrl);
   }
 
   /**
@@ -77,18 +92,20 @@ public class WebImage {
   /**
    * Remove old files from the file cache. The parent application should call this method once during
    * initialization to prevent the file cache from growing too large.
+   * @param context Context used for getting app's package name
    */
-  public static void clearOldCacheFiles() {
-    ImageCache.clearOldCacheFiles();
+  public static void clearOldCacheFiles(final Context context) {
+    ImageCache.clearOldCacheFiles(context);
   }
 
   /**
    * Remove cached files older than this many seconds from the file cache. Call with 0 to remove all
    * files in the cache.
+   * @param context Context used for getting app's package name
    * @param cacheAgeInSec Maximum age of file, in seconds
    */
-  public static void clearOldCacheFiles(long cacheAgeInSec) {
-    ImageCache.clearOldCacheFiles(cacheAgeInSec);
+  public static void clearOldCacheFiles(final Context context, long cacheAgeInSec) {
+    ImageCache.clearOldCacheFiles(context, cacheAgeInSec);
   }
 
   /**
@@ -100,15 +117,5 @@ public class WebImage {
    */
   public static void enableLogging(String tag, int level) {
     LogWrapper.enableLogging(tag, level);
-  }
-
-  /**
-   * Override the location used to save images on the SD card. By default, this is on the SD card under
-   * /data/images. Calling this method will save images to /data/com.example.yourapp/subdirectoryName.
-   * @param packageName Package name to use, you probably want Context.getPackageName()
-   * @param subdirectoryName Subdirectory name to use
-   */
-  public static void setCacheDirectory(String packageName, String subdirectoryName) {
-    ImageCache.setCacheDirectory(packageName, subdirectoryName);
   }
 }

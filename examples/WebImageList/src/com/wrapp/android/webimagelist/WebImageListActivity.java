@@ -27,9 +27,11 @@ import android.content.Context;
 import android.os.Bundle;
 import android.os.Debug;
 import android.os.Handler;
-import android.util.DisplayMetrics;
 import android.util.Log;
-import android.view.*;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
+import android.view.Window;
 import android.widget.Toast;
 import com.wrapp.android.webimage.WebImage;
 import com.wrapp.android.webimage.WebImageView;
@@ -63,7 +65,7 @@ public class WebImageListActivity extends ListActivity implements WebImageView.L
     // Remove all images from the cache when starting up. Real apps probably should call this
     // method with a non-zero argument (in seconds), or without any argument to use the default
     // value.
-    WebImage.clearOldCacheFiles(0);
+    // WebImage.clearOldCacheFiles(0);
 
     // Turn on logging so we can see what is going on.
     WebImage.enableLogging("WebImageList", Log.DEBUG);
@@ -118,7 +120,7 @@ public class WebImageListActivity extends ListActivity implements WebImageView.L
       case R.id.MainMenuClearCachesItem:
         WebImage.cancelAllRequests();
         WebImage.clearMemoryCaches();
-        WebImage.clearOldCacheFiles(0);
+        WebImage.clearOldCacheFiles(this, 0);
         Toast toast = Toast.makeText(this, "Memory and disk caches cleared", Toast.LENGTH_SHORT);
         toast.show();
         refresh();
@@ -192,7 +194,7 @@ public class WebImageListActivity extends ListActivity implements WebImageView.L
     webImageListAdapter.setShouldCacheImagesInMemory(shouldRestrictMemoryUsage);
     WebImage.cancelAllRequests();
     WebImage.clearMemoryCaches();
-    WebImage.clearOldCacheFiles(0);
+    WebImage.clearOldCacheFiles(this, 0);
     final String toastMessage = "Restrict memory usage: " + (shouldRestrictMemoryUsage ? "enabled" : "disabled");
     Toast toast = Toast.makeText(this, toastMessage, Toast.LENGTH_SHORT);
     toast.show();

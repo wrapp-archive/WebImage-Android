@@ -101,7 +101,7 @@ public class WebImageView extends ImageView implements ImageRequest.Listener {
     if(this.listener != null) {
       listener.onImageLoadStarted();
     }
-    ImageLoader.load(imageUrl, this, cacheInMemory, options);
+    ImageLoader.load(getContext(), imageUrl, this, cacheInMemory, options);
   }
 
   /**

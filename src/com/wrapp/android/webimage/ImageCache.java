@@ -21,6 +21,7 @@
 
 package com.wrapp.android.webimage;
 
+import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 
@@ -43,9 +44,9 @@ public class ImageCache {
   private static File cacheDirectory;
   private static Map<String, WeakReference<Bitmap>> memoryCache = new HashMap<String, WeakReference<Bitmap>>();
 
-  public static boolean isImageCached(URL imageUrl) {
+  public static boolean isImageCached(Context context, URL imageUrl) {
     final String imageKey = getKeyForUrl(imageUrl);
-    final File cacheFile = new File(getCacheDirectory(), imageKey);
+    final File cacheFile = new File(getCacheDirectory(context), imageKey);
     return cacheFile.exists();
   }
 
@@ -61,14 +62,14 @@ public class ImageCache {
       return bitmap;
     }
 
-    bitmap = loadImageFromFileCache(imageKey, request.imageUrl, request.loadOptions);
+    bitmap = loadImageFromFileCache(request.context, imageKey, request.imageUrl, request.loadOptions);
     if(bitmap != null) {
       LogWrapper.logMessage("Found image " + request.imageUrl + " in file cache");
       return bitmap;
     }
 
-    if(ImageDownloader.loadImage(imageKey, request.imageUrl)) {
-      bitmap = loadImageFromFileCache(imageKey, request.imageUrl, request.loadOptions);
+    if(ImageDownloader.loadImage(request.context, imageKey, request.imageUrl)) {
+      bitmap = loadImageFromFileCache(request.context, imageKey, request.imageUrl, request.loadOptions);
       if(bitmap != null) {
         if(request.cacheInMemory) {
           saveImageInMemoryCache(imageKey, bitmap);
@@ -101,10 +102,10 @@ public class ImageCache {
     }
   }
 
-  private static Bitmap loadImageFromFileCache(final String imageKey, final URL imageUrl, BitmapFactory.Options options) {
+  private static Bitmap loadImageFromFileCache(final Context context, final String imageKey, final URL imageUrl, BitmapFactory.Options options) {
     Bitmap bitmap = null;
 
-    File cacheFile = new File(getCacheDirectory(), imageKey);
+    File cacheFile = new File(getCacheDirectory(context), imageKey);
     if(cacheFile.exists()) {
       try {
         Date now = new Date();
@@ -149,11 +150,11 @@ public class ImageCache {
     }
   }
 
-  public static void saveImageInFileCache(String imageKey, final Bitmap bitmap) {
+  public static void saveImageInFileCache(final Context context, String imageKey, final Bitmap bitmap) {
     OutputStream outputStream = null;
 
     try {
-      File cacheFile = new File(getCacheDirectory(), imageKey);
+      File cacheFile = new File(getCacheDirectory(context), imageKey);
       outputStream = new FileOutputStream(cacheFile);
       bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream);
       LogWrapper.logMessage("Saved image " + imageKey + " to file cache");
@@ -175,15 +176,15 @@ public class ImageCache {
   }
 
 
-  private static File getCacheDirectory() {
+  private static File getCacheDirectory(final Context context) {
     if(cacheDirectory == null) {
-      //noinspection NullableProblems
-      setCacheDirectory(null, DEFAULT_CACHE_SUBDIRECTORY_NAME);
+      setCacheDirectory(context, DEFAULT_CACHE_SUBDIRECTORY_NAME);
     }
     return cacheDirectory;
   }
 
-  public static void setCacheDirectory(String packageName, String subdirectoryName) {
+  public static void setCacheDirectory(Context context, String subdirectoryName) {
+    // Final destination is Android/data/com.packagename/cache/subdirectory
     final File androidDirectory = new File(android.os.Environment.getExternalStorageDirectory(), "Android");
     if(!androidDirectory.exists()) {
       androidDirectory.mkdir();
@@ -194,33 +195,55 @@ public class ImageCache {
       dataDirectory.mkdir();
     }
 
-    // If package name is null, then use this package name instead
-    if(packageName == null) {
-      packageName = ImageCache.class.getPackage().getName();
-    }
-
-    final File packageDirectory = new File(dataDirectory, packageName);
+    final File packageDirectory = new File(dataDirectory, context.getPackageName());
     if(!packageDirectory.exists()) {
       packageDirectory.mkdir();
     }
 
-    cacheDirectory = new File(packageDirectory, subdirectoryName);
+    final File packageCacheDirectory = new File(packageDirectory, "cache");
+    if(!packageCacheDirectory.exists()) {
+      packageCacheDirectory.mkdir();
+    }
+
+    cacheDirectory = new File(packageCacheDirectory, subdirectoryName);
     if(!cacheDirectory.exists()) {
       cacheDirectory.mkdir();
     }
 
-    if(packageName != null) {
-      // WebImage 1.1.2 and earlier stored images in /mnt/sdcard/data/packageName. If images are found there,
-      // we should migrate them to the correct location. Unfortunately, WebImage 1.1.2 and below also used
-      // the location /mnt/sdcard/data/images if no packageName was supplied. Since this isn't very specific,
-      // we don't bother to remove those images, as they may belong to other applications.
-      final File oldDataDirectory = new File(android.os.Environment.getExternalStorageDirectory(), "data");
-      final File oldPackageDirectory = new File(oldDataDirectory, packageName);
-      final File oldCacheDirectory = new File(oldPackageDirectory, subdirectoryName);
-      if(oldCacheDirectory.exists()) {
-        if(cacheDirectory.delete()) {
-          if(!oldCacheDirectory.renameTo(cacheDirectory)) {
-            LogWrapper.logMessage("Could not migrate old image directory");
+    LogWrapper.logMessage("Cache directory is '" + cacheDirectory.toString() + "'");
+
+    // WebImage versions prior to 1.2.2 stored images in /mnt/sdcard/data/packageName. If images are found
+    // there, we should migrate them to the correct location. Unfortunately, WebImage 1.1.2 and below also
+    // used the location /mnt/sdcard/data/images if no packageName was supplied. Since this isn't very
+    // specific, we don't bother to remove those images, as they may belong to other applications.
+    final File oldDataDirectory = new File(android.os.Environment.getExternalStorageDirectory(), "data");
+    final File oldPackageDirectory = new File(oldDataDirectory, context.getPackageName());
+    final File oldCacheDirectory = new File(oldPackageDirectory, subdirectoryName);
+    if(oldCacheDirectory.exists()) {
+      if(cacheDirectory.delete()) {
+        if(!oldCacheDirectory.renameTo(cacheDirectory)) {
+          LogWrapper.logMessage("Could not migrate old cache directory from " + oldCacheDirectory.toString());
+          cacheDirectory.mkdir();
+        }
+        else {
+          LogWrapper.logMessage("Finished migrating <1.2.2 cache directory");
+        }
+      }
+    }
+    else {
+      // WebImage versions prior to 1.6.0 stored the subdirectory directly under the package name, avoiding
+      // the intermediate cache directory. Migrate these images if this is the case.
+      if(!subdirectoryName.equals("cache")) {
+        final File oldSubdirectory = new File(packageDirectory, subdirectoryName);
+        if(oldSubdirectory.exists()) {
+          if(cacheDirectory.delete()) {
+            if(!oldSubdirectory.renameTo(cacheDirectory)) {
+              LogWrapper.logMessage("Could not migrate old cache directory from " + oldSubdirectory.toString());
+              cacheDirectory.mkdir();
+            }
+            else {
+              LogWrapper.logMessage("Finished migrating <1.6.0 cache directory");
+            }
           }
         }
       }
@@ -230,22 +253,24 @@ public class ImageCache {
   /**
    * Clear expired images in the file cache to save disk space. This method will remove all
    * images older than {@link #CACHE_EXPIRATION_AGE_IN_SEC} seconds.
+   * @param context Context used for getting app's package name
    */
-  public static void clearOldCacheFiles() {
-    clearOldCacheFiles(CACHE_EXPIRATION_AGE_IN_SEC);
+  public static void clearOldCacheFiles(final Context context) {
+    clearOldCacheFiles(context, CACHE_EXPIRATION_AGE_IN_SEC);
   }
 
   /**
    * Clear all images older than a given amount of seconds.
+   * @param context Context used for getting app's package name
    * @param cacheAgeInSec Image expiration limit, in seconds
    */
-  public static void clearOldCacheFiles(long cacheAgeInSec) {
+  public static void clearOldCacheFiles(final Context context, long cacheAgeInSec) {
     final long cacheAgeInMs = cacheAgeInSec * 1000;
     Date now = new Date();
-    String[] cacheFiles = getCacheDirectory().list();
+    String[] cacheFiles = getCacheDirectory(context).list();
     if(cacheFiles != null) {
       for(String child : cacheFiles) {
-        File childFile = new File(getCacheDirectory(), child);
+        File childFile = new File(getCacheDirectory(context), child);
         if(childFile.isFile()) {
           long fileAgeInMs = now.getTime() - childFile.lastModified();
           if(fileAgeInMs > cacheAgeInMs) {

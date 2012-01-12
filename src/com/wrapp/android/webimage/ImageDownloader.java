@@ -21,30 +21,33 @@
 
 package com.wrapp.android.webimage;
 
+import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.net.http.AndroidHttpClient;
+import android.os.Build;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpHead;
-import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.params.CoreConnectionPNames;
 import org.apache.http.params.HttpParams;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
-import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 
 public class ImageDownloader {
   private static final int CONNECTION_TIMEOUT_IN_MS = 10 * 1000;
   private static final int DEFAULT_BUFFER_SIZE = 8192;
+  private static String userAgent = null;
 
-  public static boolean loadImage(final String imageKey, final URL imageUrl) {
+  public static boolean loadImage(final Context context, final String imageKey, final URL imageUrl) {
+    AndroidHttpClient httpClient = null;
     HttpEntity responseEntity = null;
     InputStream contentInputStream = null;
 
@@ -54,7 +57,7 @@ public class ImageDownloader {
         throw new Exception("Passed empty URL");
       }
       LogWrapper.logMessage("Requesting image '" + imageUrlString + "'");
-      final HttpClient httpClient = new DefaultHttpClient();
+      httpClient = AndroidHttpClient.newInstance(getUserAgent());
       final HttpParams httpParams = httpClient.getParams();
       httpParams.setParameter(CoreConnectionPNames.SO_TIMEOUT, CONNECTION_TIMEOUT_IN_MS);
       httpParams.setParameter(CoreConnectionPNames.CONNECTION_TIMEOUT, CONNECTION_TIMEOUT_IN_MS);
@@ -72,7 +75,7 @@ public class ImageDownloader {
       }
 
       Bitmap bitmap = BitmapFactory.decodeStream(contentInputStream);
-      ImageCache.saveImageInFileCache(imageKey, bitmap);
+      ImageCache.saveImageInFileCache(context, imageKey, bitmap);
       LogWrapper.logMessage("Downloaded image: " + imageUrl.toString());
       bitmap.recycle();
     }

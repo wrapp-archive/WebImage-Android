@@ -21,6 +21,7 @@
 
 package com.wrapp.android.webimage;
 
+import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 
@@ -169,14 +170,10 @@ public class ImageLoader {
     }
   }
 
-  public static void load(URL imageUrl, ImageRequest.Listener listener) {
-    load(imageUrl, listener, false, null);
-  }
-
-  public static void load(URL imageUrl, ImageRequest.Listener listener, boolean cacheInMemory, BitmapFactory.Options options) {
+  public static void load(final Context context, URL imageUrl, ImageRequest.Listener listener, boolean cacheInMemory, BitmapFactory.Options options) {
     Queue<ImageRequest> requestQueue = getInstance().pendingRequests;
     synchronized(requestQueue) {
-      requestQueue.add(new ImageRequest(imageUrl, listener, cacheInMemory, options));
+      requestQueue.add(new ImageRequest(context, imageUrl, listener, cacheInMemory, options));
       requestQueue.notify();
     }
   }

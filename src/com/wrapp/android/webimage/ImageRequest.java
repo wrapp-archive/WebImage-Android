@@ -21,12 +21,14 @@
 
 package com.wrapp.android.webimage;
 
+import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 
 import java.net.URL;
 
 public final class ImageRequest {
+  public Context context;
   public URL imageUrl;
   public Listener listener;
   public boolean cacheInMemory;
@@ -38,11 +40,12 @@ public final class ImageRequest {
     public void onBitmapLoadCancelled();
   }
 
-  public ImageRequest(URL imageUrl, Listener listener) {
-    this(imageUrl, listener, false, null);
+  public ImageRequest(final Context context, URL imageUrl, Listener listener) {
+    this(context, imageUrl, listener, false, null);
   }
 
-  public ImageRequest(URL imageUrl, Listener listener, boolean cacheInMemory, BitmapFactory.Options options) {
+  public ImageRequest(final Context context, URL imageUrl, Listener listener, boolean cacheInMemory, BitmapFactory.Options options) {
+    this.context = context;
     this.imageUrl = imageUrl;
     this.listener = listener;
     this.cacheInMemory = cacheInMemory;
