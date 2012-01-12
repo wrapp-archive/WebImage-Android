@@ -117,6 +117,7 @@ public class ImageCache {
             bitmap = BitmapFactory.decodeStream(new FileInputStream(cacheFile), null, options);
             LogWrapper.logMessage("Cached version of " + imageUrl.toString() + " is still current, updating timestamp");
             if(!cacheFile.setLastModified(now.getTime())) {
+              LogWrapper.logMessage("Can't update timestamp!");
               // Ugh, it seems that in some cases this call will always return false and refuse to update the timestamp
               // For more info, see: http://code.google.com/p/android/issues/detail?id=18624
               // In these cases, we manually re-write the file to disk. Yes, that sucks, but it's better than loosing
