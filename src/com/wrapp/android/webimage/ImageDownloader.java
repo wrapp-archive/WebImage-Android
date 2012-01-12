@@ -99,6 +99,9 @@ public class ImageDownloader {
       catch(IOException e) {
         LogWrapper.logException(e);
       }
+      if(httpClient != null) {
+        httpClient.close();
+      }
     }
 
     return true;
@@ -113,7 +116,7 @@ public class ImageDownloader {
         throw new Exception("Passed empty URL");
       }
       LogWrapper.logMessage("Requesting image '" + imageUrlString + "'");
-      final HttpClient httpClient = new DefaultHttpClient();
+      final HttpClient httpClient = AndroidHttpClient.newInstance(getUserAgent());
       final HttpParams httpParams = httpClient.getParams();
       httpParams.setParameter(CoreConnectionPNames.SO_TIMEOUT, CONNECTION_TIMEOUT_IN_MS);
       httpParams.setParameter(CoreConnectionPNames.CONNECTION_TIMEOUT, CONNECTION_TIMEOUT_IN_MS);
@@ -123,8 +126,7 @@ public class ImageDownloader {
 
       Header[] header = response.getHeaders("Expires");
       if(header != null && header.length > 0) {
-        SimpleDateFormat dateFormat = new SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss Z", Locale.US);
-        expirationDate = dateFormat.parse(header[0].getValue());
+        expirationDate = new Date(AndroidHttpClient.parseDate(header[0].getValue()));
         LogWrapper.logMessage("Image at " + imageUrl.toString() + " expires on " + expirationDate.toString());
       }
     }
@@ -133,5 +135,14 @@ public class ImageDownloader {
     }
 
     return expirationDate;
+  }
+
+  private static String getUserAgent() {
+    if(userAgent == null) {
+      final String USER_AGENT_TEMPLATE = "WebImage-Android (%s %s; %s API%s; %s)";
+      userAgent = String.format(USER_AGENT_TEMPLATE, Build.MANUFACTURER, Build.MODEL, Build.VERSION.RELEASE,
+        Build.VERSION.SDK_INT, Locale.getDefault().toString());
+    }
+    return userAgent;
   }
 }
