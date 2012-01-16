@@ -32,12 +32,15 @@ import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpHead;
+import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.params.CoreConnectionPNames;
 import org.apache.http.params.HttpParams;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 
@@ -47,7 +50,7 @@ public class ImageDownloader {
   private static String userAgent = null;
 
   public static boolean loadImage(final Context context, final String imageKey, final URL imageUrl) {
-    AndroidHttpClient httpClient = null;
+    HttpClient httpClient = null;
     HttpEntity responseEntity = null;
     InputStream contentInputStream = null;
 
@@ -57,7 +60,7 @@ public class ImageDownloader {
         throw new Exception("Passed empty URL");
       }
       LogWrapper.logMessage("Requesting image '" + imageUrlString + "'");
-      httpClient = AndroidHttpClient.newInstance(getUserAgent());
+      httpClient = getHttpClient();
       final HttpParams httpParams = httpClient.getParams();
       httpParams.setParameter(CoreConnectionPNames.SO_TIMEOUT, CONNECTION_TIMEOUT_IN_MS);
       httpParams.setParameter(CoreConnectionPNames.CONNECTION_TIMEOUT, CONNECTION_TIMEOUT_IN_MS);
@@ -100,7 +103,14 @@ public class ImageDownloader {
         LogWrapper.logException(e);
       }
       if(httpClient != null) {
-        httpClient.close();
+        try {
+          if(httpClient instanceof AndroidHttpClient) {
+            ((AndroidHttpClient)httpClient).close();
+          }
+        }
+        catch(Exception e) {
+          // Ignore
+        }
       }
     }
 
@@ -116,7 +126,7 @@ public class ImageDownloader {
         throw new Exception("Passed empty URL");
       }
       LogWrapper.logMessage("Requesting image '" + imageUrlString + "'");
-      final HttpClient httpClient = AndroidHttpClient.newInstance(getUserAgent());
+      final HttpClient httpClient = getHttpClient();
       final HttpParams httpParams = httpClient.getParams();
       httpParams.setParameter(CoreConnectionPNames.SO_TIMEOUT, CONNECTION_TIMEOUT_IN_MS);
       httpParams.setParameter(CoreConnectionPNames.CONNECTION_TIMEOUT, CONNECTION_TIMEOUT_IN_MS);
@@ -126,7 +136,7 @@ public class ImageDownloader {
 
       Header[] header = response.getHeaders("Expires");
       if(header != null && header.length > 0) {
-        expirationDate = new Date(AndroidHttpClient.parseDate(header[0].getValue()));
+        expirationDate = parseServerDateHeader(header[0]);
         LogWrapper.logMessage("Image at " + imageUrl.toString() + " expires on " + expirationDate.toString());
       }
     }
@@ -135,6 +145,33 @@ public class ImageDownloader {
     }
 
     return expirationDate;
+  }
+
+  // AndroidHttpClient was introduced in API Level 8, but many 2.1 phones actually have it. Why this is,
+  // I have no idea. However, on these devices it is much safer to use the default HTTP client instead
+  // rather than risk throwing an exception when the class (or one of its methods) is not found.
+  private static HttpClient getHttpClient() {
+    if(Build.VERSION.SDK_INT < Build.VERSION_CODES.FROYO) {
+      return new DefaultHttpClient();
+    }
+    else {
+      return AndroidHttpClient.newInstance(getUserAgent());
+    }
+  }
+
+  private static Date parseServerDateHeader(Header serverDateHeader) {
+    if(Build.VERSION.SDK_INT < Build.VERSION_CODES.FROYO) {
+      SimpleDateFormat dateFormat = new SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss Z", Locale.US);
+      try {
+        return dateFormat.parse(serverDateHeader.getValue());
+      }
+      catch(ParseException e) {
+        return new Date();
+      }
+    }
+    else {
+      return new Date(AndroidHttpClient.parseDate(serverDateHeader.getValue()));
+    }
   }
 
   private static String getUserAgent() {
