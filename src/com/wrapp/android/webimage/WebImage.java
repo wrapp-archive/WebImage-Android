@@ -109,6 +109,15 @@ public class WebImage {
   }
 
   /**
+   * Remove a single image from both the memory and disk caches
+   * @param context Context used for getting app's package name
+   * @param imageUrl Image URL to remove
+   */
+  public static void clearImageFromCaches(final Context context, final URL imageUrl) {
+    ImageCache.clearImageFromCaches(context, imageUrl);
+  }
+
+  /**
    * By default, the WebImage library is silent and will not produce any output to the console. During
    * debugging you may wish to call this method in your app's initialization method to see debugging
    * output to the logcat.

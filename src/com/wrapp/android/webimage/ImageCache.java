@@ -251,6 +251,22 @@ public class ImageCache {
     }
   }
 
+  public static void clearImageFromCaches(final Context context, final URL imageUrl) {
+    String imageKey = getKeyForUrl(imageUrl);
+    synchronized(memoryCache) {
+      if(memoryCache.containsKey(imageKey)) {
+        memoryCache.remove(imageKey);
+      }
+    }
+
+    final File cacheFile = new File(getCacheDirectory(context), imageKey);
+    if(cacheFile.exists()) {
+      if(!cacheFile.delete()) {
+        LogWrapper.logMessage("Could not remove cached version of image '" + imageUrl + "'");
+      }
+    }
+  }
+
   /**
    * Clear expired images in the file cache to save disk space. This method will remove all
    * images older than {@link #CACHE_EXPIRATION_AGE_IN_SEC} seconds.
