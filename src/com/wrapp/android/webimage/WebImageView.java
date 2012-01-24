@@ -29,6 +29,7 @@ import android.os.Handler;
 import android.util.AttributeSet;
 import android.widget.ImageView;
 
+import java.net.MalformedURLException;
 import java.net.URL;
 
 /**
@@ -76,6 +77,21 @@ public class WebImageView extends ImageView implements ImageRequest.Listener {
    */
   public void setListener(Listener listener) {
     this.listener = listener;
+  }
+
+  /**
+   * Load an image asynchronously from the web
+   * @param imageUrlString Image URL to download image from. By default, this image will be cached to
+   * disk (ie, SD card), but not in memory.
+   */
+  public void setImageUrl(String imageUrlString) {
+    try {
+      URL imageUrl = new URL(imageUrlString);
+      setImageUrl(imageUrl, false, null, null);
+    }
+    catch(MalformedURLException e) {
+      LogWrapper.logException(e);
+    }
   }
 
   /**
