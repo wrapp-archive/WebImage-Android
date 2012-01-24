@@ -119,6 +119,7 @@ public class ImageDownloader {
 
   public static Date getServerTimestamp(final URL imageUrl) {
     Date expirationDate = new Date();
+    HttpClient httpClient = null;
 
     try {
       final String imageUrlString = imageUrl.toString();
@@ -126,7 +127,7 @@ public class ImageDownloader {
         throw new Exception("Passed empty URL");
       }
       LogWrapper.logMessage("Requesting image '" + imageUrlString + "'");
-      final HttpClient httpClient = getHttpClient();
+      httpClient = getHttpClient();
       final HttpParams httpParams = httpClient.getParams();
       httpParams.setParameter(CoreConnectionPNames.SO_TIMEOUT, CONNECTION_TIMEOUT_IN_MS);
       httpParams.setParameter(CoreConnectionPNames.CONNECTION_TIMEOUT, CONNECTION_TIMEOUT_IN_MS);
@@ -142,6 +143,18 @@ public class ImageDownloader {
     }
     catch(Exception e) {
       LogWrapper.logException(e);
+    }
+    finally {
+      if(httpClient != null) {
+        try {
+          if(httpClient instanceof AndroidHttpClient) {
+            ((AndroidHttpClient)httpClient).close();
+          }
+        }
+        catch(Exception e) {
+          // Ignore
+        }
+      }
     }
 
     return expirationDate;
