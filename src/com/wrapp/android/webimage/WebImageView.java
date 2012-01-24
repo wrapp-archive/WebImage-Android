@@ -114,9 +114,11 @@ public class WebImageView extends ImageView implements ImageRequest.Listener {
    * for more details. Can be null.
    * @param errorImageResId Resource ID  to be displayed in case the image could not be loaded. If 0, no new image
    * will be displayed on error.
+   * @param placeholderImageResId Resource ID to set for placeholder image while image is loading.
    */
-  public void setImageUrl(URL imageUrl, boolean cacheInMemory, BitmapFactory.Options options, int errorImageResId) {
+  public void setImageUrl(URL imageUrl, boolean cacheInMemory, BitmapFactory.Options options, int errorImageResId, int placeholderImageResId) {
     this.errorImageResId = errorImageResId;
+    setImageResource(placeholderImageResId);
     if(this.listener != null) {
       listener.onImageLoadStarted();
     }
@@ -132,11 +134,13 @@ public class WebImageView extends ImageView implements ImageRequest.Listener {
    * @param options Options to use when loading the image. See the documentation for {@link BitmapFactory.Options}
    * for more details. Can be null.
    * @param errorImage Drawable to be displayed in case the image could not be loaded. If null, no new image
-   * will be displayed on error. If possible, use {@link #setImageUrl(java.net.URL, boolean, android.graphics.BitmapFactory.Options, int)}
+   * will be displayed on error. If possible, use {@link #setImageUrl(java.net.URL, boolean, android.graphics.BitmapFactory.Options, int, int)}
    * instead of this method, as that will save a bit of memory.
+   * @param placeholderImage Drawable to set as a placeholder while image is loading.
    */
-  public void setImageUrl(URL imageUrl, boolean cacheInMemory, BitmapFactory.Options options, Drawable errorImage) {
+  public void setImageUrl(URL imageUrl, boolean cacheInMemory, BitmapFactory.Options options, Drawable errorImage, Drawable placeholderImage) {
     this.errorImage = errorImage;
+    setImageDrawable(placeholderImage);
     if(this.listener != null) {
       listener.onImageLoadStarted();
     }
