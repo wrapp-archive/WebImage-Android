@@ -38,8 +38,11 @@ import java.net.URL;
 @SuppressWarnings({"UnusedDeclaration"})
 public class WebImageView extends ImageView implements ImageRequest.Listener {
   Handler uiHandler;
-  private Drawable errorImage;
   private Listener listener;
+  // Save both a Drawable and int here. If the user wants to pass a resource ID, we can load
+  // this lazily and save a bit of memory.
+  private Drawable errorImage;
+  private int errorImageResId;
 
   public interface Listener {
     public void onImageLoadStarted();
@@ -93,8 +96,28 @@ public class WebImageView extends ImageView implements ImageRequest.Listener {
    * only for activities which re-use the same images frequently.
    * @param options Options to use when loading the image. See the documentation for {@link BitmapFactory.Options}
    * for more details. Can be null.
-   * @param errorImage Drawable to be displayed in case the image could not be loaded. If null, no new image
+   * @param errorImageResId Resource ID  to be displayed in case the image could not be loaded. If 0, no new image
    * will be displayed on error.
+   */
+  public void setImageUrl(URL imageUrl, boolean cacheInMemory, BitmapFactory.Options options, int errorImageResId) {
+    this.errorImageResId = errorImageResId;
+    if(this.listener != null) {
+      listener.onImageLoadStarted();
+    }
+    ImageLoader.load(getContext(), imageUrl, this, cacheInMemory, options);
+  }
+
+  /**
+   * Load an image asynchronously from the web
+   * @param imageUrl Image URL to download image from
+   * @param cacheInMemory True to keep the downloaded drawable in the memory cache. Set to true for faster
+   * access, but be careful about using this flag, as it can consume a lot of memory. This is recommended
+   * only for activities which re-use the same images frequently.
+   * @param options Options to use when loading the image. See the documentation for {@link BitmapFactory.Options}
+   * for more details. Can be null.
+   * @param errorImage Drawable to be displayed in case the image could not be loaded. If null, no new image
+   * will be displayed on error. If possible, use {@link #setImageUrl(java.net.URL, boolean, android.graphics.BitmapFactory.Options, int)}
+   * instead of this method, as that will save a bit of memory.
    */
   public void setImageUrl(URL imageUrl, boolean cacheInMemory, BitmapFactory.Options options, Drawable errorImage) {
     this.errorImage = errorImage;
@@ -135,6 +158,10 @@ public class WebImageView extends ImageView implements ImageRequest.Listener {
     LogWrapper.logMessage(message);
     postToGuiThread(new Runnable() {
       public void run() {
+        // In case of error, lazily load the drawable here
+        if(errorImageResId > 0) {
+          errorImage = getResources().getDrawable(errorImageResId);
+        }
         if(errorImage != null) {
           setImageDrawable(errorImage);
         }
