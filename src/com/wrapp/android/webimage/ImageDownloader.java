@@ -78,6 +78,10 @@ public class ImageDownloader {
       }
 
       Bitmap bitmap = BitmapFactory.decodeStream(contentInputStream);
+      if(bitmap == null) {
+        LogWrapper.logMessage("Image could not be decoded:" + imageUrl.toString());
+        return false;
+      }
       ImageCache.saveImageInFileCache(context, imageKey, bitmap);
       LogWrapper.logMessage("Downloaded image: " + imageUrl.toString());
       bitmap.recycle();
