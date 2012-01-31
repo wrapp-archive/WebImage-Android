@@ -23,7 +23,6 @@ package com.wrapp.android.webimagelist;
 
 import android.content.Context;
 import android.graphics.BitmapFactory;
-import android.graphics.drawable.Drawable;
 import android.util.AttributeSet;
 import android.view.LayoutInflater;
 import android.widget.RelativeLayout;
@@ -38,7 +37,6 @@ import java.net.URL;
 public class WebImageContainerView extends RelativeLayout {
   private WebImageView webImageView;
   private TextView imageText;
-  private static Drawable errorImage;
 
   public WebImageContainerView(Context context) {
     super(context);
@@ -56,10 +54,6 @@ public class WebImageContainerView extends RelativeLayout {
   }
 
   private void initialize(Context context) {
-    if(errorImage == null) {
-      errorImage = context.getResources().getDrawable(R.drawable.person_placeholder_error);
-    }
-
     LayoutInflater layoutInflater = (LayoutInflater)context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
     layoutInflater.inflate(R.layout.web_image_container_view, this, true);
     webImageView = (WebImageView)findViewById(R.id.WebImageView);
@@ -69,9 +63,8 @@ public class WebImageContainerView extends RelativeLayout {
   public void setImageUrl(String imageUrlString, WebImageView.Listener listener, boolean shouldCacheImagesInMemory, BitmapFactory.Options options) {
     try {
       URL imageUrl = new URL(imageUrlString);
-      webImageView.setImageResource(R.drawable.person_placeholder);
       webImageView.setListener(listener);
-      webImageView.setImageUrl(imageUrl, shouldCacheImagesInMemory, options, errorImage);
+      webImageView.setImageUrl(imageUrl, shouldCacheImagesInMemory, options, R.drawable.person_placeholder_error, R.drawable.person_placeholder);
     }
     catch(MalformedURLException e) {
       e.printStackTrace();
