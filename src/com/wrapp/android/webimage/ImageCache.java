@@ -24,6 +24,7 @@ package com.wrapp.android.webimage;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.os.Environment;
 
 import java.io.*;
 import java.lang.ref.WeakReference;
@@ -62,23 +63,33 @@ public class ImageCache {
       return bitmap;
     }
 
-    bitmap = loadImageFromFileCache(request.context, imageKey, request.imageUrl, request.loadOptions);
-    if(bitmap != null) {
-      LogWrapper.logMessage("Found image " + request.imageUrl + " in file cache");
-      return bitmap;
-    }
-
-    if(ImageDownloader.loadImage(request.context, imageKey, request.imageUrl)) {
+    final String externalStorageState = Environment.getExternalStorageState();
+    if(externalStorageState.equals(Environment.MEDIA_MOUNTED) || externalStorageState.endsWith(Environment.MEDIA_MOUNTED_READ_ONLY)) {
       bitmap = loadImageFromFileCache(request.context, imageKey, request.imageUrl, request.loadOptions);
       if(bitmap != null) {
-        if(request.cacheInMemory) {
-          saveImageInMemoryCache(imageKey, bitmap);
-        }
+        LogWrapper.logMessage("Found image " + request.imageUrl + " in file cache");
         return bitmap;
       }
     }
 
-    LogWrapper.logMessage("Could not load drawable, returning null");
+    if(externalStorageState.equals(Environment.MEDIA_MOUNTED)) {
+      if(ImageDownloader.loadImage(request.context, imageKey, request.imageUrl)) {
+        bitmap = loadImageFromFileCache(request.context, imageKey, request.imageUrl, request.loadOptions);
+        if(bitmap != null) {
+          if(request.cacheInMemory) {
+            saveImageInMemoryCache(imageKey, bitmap);
+          }
+          return bitmap;
+        }
+      }
+    }
+    else {
+      // TODO: Download directly
+      LogWrapper.logMessage("No SD Card present!");
+      return null;
+    }
+
+    LogWrapper.logMessage("Could not load image, returning null");
     return bitmap;
   }
 
