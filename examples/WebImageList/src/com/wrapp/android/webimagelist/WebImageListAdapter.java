@@ -49,7 +49,7 @@ public class WebImageListAdapter extends BaseAdapter {
   private String getImageUrl(int i) {
     if(USE_NUMBER_IMAGES) {
       // Numbers with random backgrounds. More useful for testing correct listview behavior
-      return "http://c539576.r76.cf2.rackcdn.com/numbers/" + i + ".png";
+      return "http://static.nikreiman.com/numbers/" + i + ".png";
     }
     else {
       if(USE_AWESOME_IMAGES) {
