@@ -22,13 +22,9 @@
 package com.wrapp.android.webimage;
 
 import android.content.Context;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.net.http.AndroidHttpClient;
 import android.os.Build;
-import org.apache.http.Header;
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
+import org.apache.http.*;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpHead;
@@ -36,8 +32,7 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.params.CoreConnectionPNames;
 import org.apache.http.params.HttpParams;
 
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.net.URL;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -47,12 +42,23 @@ import java.util.Locale;
 public class ImageDownloader {
   private static final int CONNECTION_TIMEOUT_IN_MS = 10 * 1000;
   private static final int DEFAULT_BUFFER_SIZE = 8192;
+  private static final int MAX_REDIRECT_COUNT = 4;
   private static String userAgent = null;
 
   public static boolean loadImage(final Context context, final String imageKey, final URL imageUrl) {
+    return loadImage(context, imageKey, imageUrl, 0);
+  }
+
+  private static boolean loadImage(final Context context, final String imageKey, final URL imageUrl, int redirectCount) {
+    if(redirectCount > MAX_REDIRECT_COUNT) {
+      LogWrapper.logMessage("Too many redirects!");
+      return false;
+    }
+
     HttpClient httpClient = null;
     HttpEntity responseEntity = null;
-    InputStream contentInputStream = null;
+    BufferedInputStream bufferedInputStream = null;
+    BufferedOutputStream bufferedOutputStream = null;
 
     try {
       final String imageUrlString = imageUrl.toString();
@@ -72,19 +78,56 @@ public class ImageDownloader {
       if(responseEntity == null) {
         throw new Exception("No response entity for image: " + imageUrl.toString());
       }
-      contentInputStream = responseEntity.getContent();
-      if(contentInputStream == null) {
-        throw new Exception("No content stream for image: " + imageUrl.toString());
+      final StatusLine statusLine = response.getStatusLine();
+      final int statusCode = statusLine.getStatusCode();
+      switch(statusCode) {
+        case HttpStatus.SC_OK:
+          break;
+        case HttpStatus.SC_MOVED_TEMPORARILY:
+        case HttpStatus.SC_MOVED_PERMANENTLY:
+        case HttpStatus.SC_SEE_OTHER:
+          final String location = response.getFirstHeader("Location").getValue();
+          LogWrapper.logMessage("Image redirected to: " + location);
+          // Force close the connection now, otherwise we risk leaking too many open HTTP connections
+          responseEntity.consumeContent();
+          responseEntity = null;
+          if(httpClient instanceof AndroidHttpClient) {
+            ((AndroidHttpClient)httpClient).close();
+          }
+          httpClient = null;
+          return loadImage(context, imageKey, new URL(location), redirectCount + 1);
+        default:
+          LogWrapper.logMessage("Could not download image, got status code " + statusCode);
+          return false;
       }
 
-      Bitmap bitmap = BitmapFactory.decodeStream(contentInputStream);
-      if(bitmap == null) {
-        LogWrapper.logMessage("Image could not be decoded:" + imageUrl.toString());
+      bufferedInputStream = new BufferedInputStream(responseEntity.getContent());
+      File cacheFile = new File(ImageCache.getCacheDirectory(context), imageKey);
+      bufferedOutputStream = new BufferedOutputStream(new FileOutputStream(cacheFile));
+
+      long contentSize = responseEntity.getContentLength();
+      long totalBytesRead = 0;
+      try {
+        int bytesRead;
+        final byte[] buffer = new byte[DEFAULT_BUFFER_SIZE];
+        do {
+          bytesRead = bufferedInputStream.read(buffer, 0, DEFAULT_BUFFER_SIZE);
+          if(bytesRead > 0) {
+            bufferedOutputStream.write(buffer, 0, bytesRead);
+            totalBytesRead += bytesRead;
+          }
+        } while(bytesRead > 0);
+      }
+      catch(IOException e) {
+        LogWrapper.logException(e);
         return false;
       }
-      ImageCache.saveImageInFileCache(context, imageKey, bitmap);
-      LogWrapper.logMessage("Downloaded image: " + imageUrl.toString());
-      bitmap.recycle();
+
+      if(totalBytesRead != contentSize) {
+        LogWrapper.logMessage("Short read! Expected " + contentSize + "b, got " + totalBytesRead);
+        return false;
+      }
+      LogWrapper.logMessage("Saved image " + imageKey + " to file cache");
     }
     catch(IOException e) {
       LogWrapper.logException(e);
@@ -96,8 +139,12 @@ public class ImageDownloader {
     }
     finally {
       try {
-        if(contentInputStream != null) {
-          contentInputStream.close();
+        if(bufferedInputStream != null) {
+          bufferedInputStream.close();
+        }
+        if(bufferedOutputStream != null) {
+          bufferedOutputStream.flush();
+          bufferedOutputStream.close();
         }
         if(responseEntity != null) {
           responseEntity.consumeContent();
