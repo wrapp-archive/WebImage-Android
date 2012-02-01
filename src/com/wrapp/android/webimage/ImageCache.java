@@ -162,33 +162,7 @@ public class ImageCache {
     }
   }
 
-  public static void saveImageInFileCache(final Context context, String imageKey, final Bitmap bitmap) {
-    OutputStream outputStream = null;
-
-    try {
-      File cacheFile = new File(getCacheDirectory(context), imageKey);
-      outputStream = new FileOutputStream(cacheFile);
-      bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream);
-      LogWrapper.logMessage("Saved image " + imageKey + " to file cache");
-      outputStream.flush();
-    }
-    catch(IOException e) {
-      LogWrapper.logException(e);
-    }
-    finally {
-      try {
-        if(outputStream != null) {
-          outputStream.close();
-        }
-      }
-      catch(IOException e) {
-        LogWrapper.logException(e);
-      }
-    }
-  }
-
-
-  private static File getCacheDirectory(final Context context) {
+  public static File getCacheDirectory(final Context context) {
     if(cacheDirectory == null) {
       setCacheDirectory(context, DEFAULT_CACHE_SUBDIRECTORY_NAME);
     }
