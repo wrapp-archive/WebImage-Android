@@ -21,5 +21,46 @@
 
 package com.wrapp.android.webimage;
 
-public class CheckTimestampThread {
+import android.graphics.Bitmap;
+
+import java.io.File;
+import java.util.Date;
+
+public class CheckTimestampThread extends TaskQueueThread {
+  private static CheckTimestampThread staticInstance;
+
+  public CheckTimestampThread() {
+    super("CheckTimestamp");
+    setPriority(Thread.MIN_PRIORITY);
+  }
+
+  public static CheckTimestampThread getInstance() {
+    if(staticInstance == null) {
+      staticInstance = new CheckTimestampThread();
+    }
+    return staticInstance;
+  }
+
+  @Override
+  protected Bitmap processRequest(ImageRequest request) {
+    Date expirationDate = ImageDownloader.getServerTimestamp(request.imageUrl);
+    Date now = new Date();
+    if(expirationDate.after(now)) {
+      LogWrapper.logMessage("Cached version of " + request.imageUrl.toString() + " is still current, updating timestamp");
+      File cacheFile = new File(ImageCache.getCacheDirectory(request.context), request.imageKey);
+      if(!cacheFile.setLastModified(now.getTime())) {
+        LogWrapper.logMessage("Can't update timestamp!");
+        // Ugh, it seems that in some cases this call will always return false and refuse to update the timestamp
+        // For more info, see: http://code.google.com/p/android/issues/detail?id=18624
+        // In these cases, we manually re-write the file to disk. Yes, that sucks, but it's better than loosing
+        // the ability to do any intelligent file caching at all.
+        // TODO: saveImageInFileCache(imageKey, bitmap);
+      }
+    }
+    else {
+      LogWrapper.logMessage("Cached version of " + request.imageUrl.toString() + " found, but has expired.");
+      DownloadThread.getInstance().addTask(request);
+    }
+    return null;
+  }
 }
