@@ -40,7 +40,10 @@ public class DownloadThread extends TaskQueueThread {
 
   @Override
   protected Bitmap processRequest(ImageRequest request) {
-    if(ImageDownloader.loadImage(request.context, request.imageKey, request.imageUrl)) {
+    if(ImageCache.isImageCached(request.context, request.imageKey)) {
+      FileLoaderThread.getInstance().addTask(request);
+    }
+    else if(ImageDownloader.loadImage(request.context, request.imageKey, request.imageUrl)) {
       FileLoaderThread.getInstance().addTask(request);
     }
     return null;
