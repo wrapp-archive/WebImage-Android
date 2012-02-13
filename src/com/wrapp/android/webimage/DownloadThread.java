@@ -21,5 +21,28 @@
 
 package com.wrapp.android.webimage;
 
-public class DownloadThread {
+import android.graphics.Bitmap;
+
+public class DownloadThread extends TaskQueueThread {
+  private static DownloadThread staticInstance;
+
+  public DownloadThread() {
+    super("Download");
+    setPriority(Thread.MIN_PRIORITY);
+  }
+
+  public static DownloadThread getInstance() {
+    if(staticInstance == null) {
+      staticInstance = new DownloadThread();
+    }
+    return staticInstance;
+  }
+
+  @Override
+  protected Bitmap processRequest(ImageRequest request) {
+    if(ImageDownloader.loadImage(request.context, request.imageKey, request.imageUrl)) {
+      FileLoaderThread.getInstance().addTask(request);
+    }
+    return null;
+  }
 }
