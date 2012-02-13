@@ -43,6 +43,9 @@ public class WebImageView extends ImageView implements ImageRequest.Listener {
   // this lazily and save a bit of memory.
   private Drawable errorImage;
   private int errorImageResId;
+  private Drawable placeholderImage;
+  private int placeholderImageResId;
+  private URL currentImageUrl;
 
   public interface Listener {
     public void onImageLoadStarted();
@@ -216,5 +219,21 @@ public class WebImageView extends ImageView implements ImageRequest.Listener {
    */
   public final void postToGuiThread(Runnable runnable) {
     uiHandler.post(runnable);
+  }
+
+  public void setErrorImageResId(int errorImageResId) {
+    this.errorImageResId = errorImageResId;
+  }
+
+  public void setErrorImage(Drawable errorImage) {
+    this.errorImage = errorImage;
+  }
+
+  public void setPlaceholderImage(Drawable placeholderImage) {
+    this.placeholderImage = placeholderImage;
+  }
+
+  public void setPlaceholderImageResId(int placeholderImageResId) {
+    this.placeholderImageResId = placeholderImageResId;
   }
 }
