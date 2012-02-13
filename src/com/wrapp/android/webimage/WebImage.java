@@ -70,7 +70,7 @@ public class WebImage {
    * @return True if the image is in the file cache, false otherwise
    */
   public static boolean isImageCached(final Context context, URL imageUrl) {
-    return ImageCache.isImageCached(context, imageUrl);
+    return ImageCache.isImageCached(context, ImageCache.getCacheKeyForUrl(imageUrl));
   }
 
   /**
