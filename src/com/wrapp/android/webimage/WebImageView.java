@@ -118,33 +118,24 @@ public class WebImageView extends ImageView implements ImageRequest.Listener {
    * @param placeholderImageResId Resource ID to set for placeholder image while image is loading.
    */
   public void setImageUrl(URL imageUrl, boolean cacheInMemory, BitmapFactory.Options options, int errorImageResId, int placeholderImageResId) {
-    this.errorImageResId = errorImageResId;
-    setImageResource(placeholderImageResId);
-    if(this.listener != null) {
-      listener.onImageLoadStarted();
+    if(imageUrl.equals(currentImageUrl)) {
+      return;
     }
-    ImageLoader.load(getContext(), imageUrl, this, cacheInMemory, options);
-  }
 
-  /**
-   * Load an image asynchronously from the web
-   * @param imageUrl Image URL to download image from
-   * @param cacheInMemory True to keep the downloaded drawable in the memory cache. Set to true for faster
-   * access, but be careful about using this flag, as it can consume a lot of memory. This is recommended
-   * only for activities which re-use the same images frequently.
-   * @param options Options to use when loading the image. See the documentation for {@link BitmapFactory.Options}
-   * for more details. Can be null.
-   * @param errorImage Drawable to be displayed in case the image could not be loaded. If null, no new image
-   * will be displayed on error. If possible, use {@link #setImageUrl(java.net.URL, boolean, android.graphics.BitmapFactory.Options, int, int)}
-   * instead of this method, as that will save a bit of memory.
-   * @param placeholderImage Drawable to set as a placeholder while image is loading.
-   */
-  public void setImageUrl(URL imageUrl, boolean cacheInMemory, BitmapFactory.Options options, Drawable errorImage, Drawable placeholderImage) {
-    this.errorImage = errorImage;
-    setImageDrawable(placeholderImage);
+    this.errorImageResId = errorImageResId;
+    if(this.placeholderImageResId > 0) {
+      setImageResource(this.placeholderImageResId);
+    }
+    else if(this.placeholderImage != null) {
+      setImageDrawable(this.placeholderImage);
+    }
+    else if(placeholderImageResId > 0) {
+      setImageResource(placeholderImageResId);
+    }
     if(this.listener != null) {
       listener.onImageLoadStarted();
     }
+    currentImageUrl = imageUrl;
     ImageLoader.load(getContext(), imageUrl, this, cacheInMemory, options);
   }
 
