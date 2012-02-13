@@ -32,4 +32,6 @@
     android:title="@string/menu_show_memory_use"/>
   <item android:id="@+id/MainMenuRestrictMemoryUse"
     android:title="@string/menu_restrict_memory_use"/>
+  <item android:id="@+id/MainMenuForceTimestampChecks"
+    android:title="@string/menu_force_timestamp_checks"/>
 </menu>

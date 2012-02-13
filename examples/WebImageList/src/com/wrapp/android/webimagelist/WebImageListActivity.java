@@ -33,6 +33,7 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.Window;
 import android.widget.Toast;
+import com.wrapp.android.webimage.ImageCache;
 import com.wrapp.android.webimage.WebImage;
 import com.wrapp.android.webimage.WebImageView;
 
@@ -55,6 +56,9 @@ public class WebImageListActivity extends ListActivity implements WebImageView.L
   // Counter to keep track of number of running image tasks. Note that this must be an Integer
   // rather than an int so that it can be synchronized and thus more threadsafe.
   private Integer numTasks = 0;
+
+  // Used when toggling cache recheck time from menu
+  private long defaultCacheRecheckAgeInMs = ImageCache.getCacheRecheckAgeInMs();
 
   @Override
   public void onCreate(Bundle savedInstanceState) {
@@ -124,6 +128,14 @@ public class WebImageListActivity extends ListActivity implements WebImageView.L
         Toast toast = Toast.makeText(this, "Memory and disk caches cleared", Toast.LENGTH_SHORT);
         toast.show();
         refresh();
+        break;
+      case R.id.MainMenuForceTimestampChecks:
+        if(ImageCache.getCacheRecheckAgeInMs() == 1) {
+          ImageCache.setCacheRecheckAgeInMs(defaultCacheRecheckAgeInMs);
+        }
+        else {
+          ImageCache.setCacheRecheckAgeInMs(1);
+        }
         break;
       case R.id.MainMenuShowMemoryUse:
         showMemoryUsageToast();

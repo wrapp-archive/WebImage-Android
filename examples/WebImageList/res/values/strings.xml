@@ -27,4 +27,5 @@
   <string name="menu_show_memory_use">Show Memory Use</string>
   <string name="menu_toggle_memory_cache">Toggle Memory Cache</string>
   <string name="menu_restrict_memory_use">Restrict Memory Use</string>
+  <string name="menu_force_timestamp_checks">Force Timestamp Checks</string>
 </resources>
