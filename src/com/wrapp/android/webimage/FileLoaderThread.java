@@ -46,7 +46,6 @@ public class FileLoaderThread extends TaskQueueThread {
   @Override
   protected Bitmap processRequest(ImageRequest request) {
     Bitmap bitmap = null;
-    LogWrapper.logMessage("CMON");
 
     File cacheFile = new File(ImageCache.getCacheDirectory(request.context), request.imageKey);
     if(cacheFile.exists()) {
