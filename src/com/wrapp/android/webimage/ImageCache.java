@@ -23,10 +23,8 @@ package com.wrapp.android.webimage;
 
 import android.content.Context;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.os.Environment;
 
-import java.io.*;
+import java.io.File;
 import java.lang.ref.WeakReference;
 import java.net.URL;
 import java.security.MessageDigest;
@@ -50,48 +48,6 @@ public class ImageCache {
     return cacheFile.exists();
   }
 
-  public static Bitmap loadImage(ImageRequest request) {
-    final String imageKey = getKeyForUrl(request.imageUrl);
-    LogWrapper.logMessage("Loading image: " + request.imageUrl);
-
-    // Always check the memory cache first, even if the caller doesn't request this image to be cached
-    // there. This lookup is pretty fast, so it's a good performance gain.
-    Bitmap bitmap = loadImageFromMemoryCache(imageKey);
-    if(bitmap != null) {
-      LogWrapper.logMessage("Found image " + request.imageUrl + " in memory cache");
-      return bitmap;
-    }
-
-    final String externalStorageState = Environment.getExternalStorageState();
-    if(externalStorageState.equals(Environment.MEDIA_MOUNTED) || externalStorageState.endsWith(Environment.MEDIA_MOUNTED_READ_ONLY)) {
-      bitmap = loadImageFromFileCache(request.context, imageKey, request.imageUrl, request.loadOptions);
-      if(bitmap != null) {
-        LogWrapper.logMessage("Found image " + request.imageUrl + " in file cache");
-        return bitmap;
-      }
-    }
-
-    if(externalStorageState.equals(Environment.MEDIA_MOUNTED)) {
-      if(ImageDownloader.loadImage(request.context, imageKey, request.imageUrl)) {
-        bitmap = loadImageFromFileCache(request.context, imageKey, request.imageUrl, request.loadOptions);
-        if(bitmap != null) {
-          if(request.cacheInMemory) {
-            saveImageInMemoryCache(imageKey, bitmap);
-          }
-          return bitmap;
-        }
-      }
-    }
-    else {
-      // TODO: Download directly
-      LogWrapper.logMessage("No SD Card present!");
-      return null;
-    }
-
-    LogWrapper.logMessage("Could not load image, returning null");
-    return bitmap;
-  }
-
   public static Bitmap loadImageFromMemoryCache(final String imageKey) {
     synchronized(memoryCache) {
       if(memoryCache.containsKey(imageKey)) {
@@ -110,49 +66,6 @@ public class ImageCache {
         return null;
       }
     }
-  }
-
-  private static Bitmap loadImageFromFileCache(final Context context, final String imageKey, final URL imageUrl, BitmapFactory.Options options) {
-    Bitmap bitmap = null;
-
-    File cacheFile = new File(getCacheDirectory(context), imageKey);
-    if(cacheFile.exists()) {
-      try {
-        Date now = new Date();
-        long fileAgeInMs = now.getTime() - cacheFile.lastModified();
-        if(fileAgeInMs > CACHE_RECHECK_AGE_IN_MS) {
-          Date expirationDate = ImageDownloader.getServerTimestamp(imageUrl);
-          if(expirationDate.after(now)) {
-            // TODO: decodeFileDescriptor might be faster, see http://stackoverflow.com/a/7116158/14302
-            bitmap = BitmapFactory.decodeStream(new FileInputStream(cacheFile), null, options);
-            LogWrapper.logMessage("Cached version of " + imageUrl.toString() + " is still current, updating timestamp");
-            if(!cacheFile.setLastModified(now.getTime())) {
-              LogWrapper.logMessage("Can't update timestamp!");
-              // Ugh, it seems that in some cases this call will always return false and refuse to update the timestamp
-              // For more info, see: http://code.google.com/p/android/issues/detail?id=18624
-              // In these cases, we manually re-write the file to disk. Yes, that sucks, but it's better than loosing
-              // the ability to do any intelligent file caching at all.
-              // TODO: saveImageInFileCache(imageKey, bitmap);
-            }
-          }
-          else {
-            LogWrapper.logMessage("Cached version of " + imageUrl.toString() + " found, but has expired.");
-          }
-        }
-        else {
-          // TODO: decodeFileDescriptor might be faster, see http://stackoverflow.com/a/7116158/14302
-          bitmap = BitmapFactory.decodeStream(new FileInputStream(cacheFile), null, options);
-          if(bitmap == null) {
-            throw new Exception("Could not create bitmap from image: " + imageUrl.toString());
-          }
-        }
-      }
-      catch(Exception e) {
-        LogWrapper.logException(e);
-      }
-    }
-
-    return bitmap;
   }
 
   private static void saveImageInMemoryCache(String imageKey, final Bitmap bitmap) {
