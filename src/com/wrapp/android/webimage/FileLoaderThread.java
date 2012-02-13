@@ -54,7 +54,7 @@ public class FileLoaderThread extends TaskQueueThread {
       try {
         Date now = new Date();
         long fileAgeInMs = now.getTime() - cacheFile.lastModified();
-        if(fileAgeInMs > ImageCache.CACHE_RECHECK_AGE_IN_MS) {
+        if(fileAgeInMs > ImageCache.getCacheRecheckAgeInMs()) {
           CheckTimestampThread.getInstance().addTask(request);
         }
 

@@ -36,16 +36,25 @@ import java.util.Map;
 public class ImageCache {
   private static final long ONE_DAY_IN_SEC = 24 * 60 * 60;
   private static final long CACHE_RECHECK_AGE_IN_SEC = ONE_DAY_IN_SEC;
-  public static final long CACHE_RECHECK_AGE_IN_MS = CACHE_RECHECK_AGE_IN_SEC * 1000;
-  public static final long CACHE_EXPIRATION_AGE_IN_SEC = ONE_DAY_IN_SEC * 30;
+  private static final long CACHE_RECHECK_AGE_IN_MS = CACHE_RECHECK_AGE_IN_SEC * 1000;
+  private static final long CACHE_EXPIRATION_AGE_IN_SEC = ONE_DAY_IN_SEC * 30;
   private static final String DEFAULT_CACHE_SUBDIRECTORY_NAME = "images";
 
   private static File cacheDirectory;
   private static Map<String, WeakReference<Bitmap>> memoryCache = new HashMap<String, WeakReference<Bitmap>>();
+  private static long cacheRecheckAgeInMs = CACHE_RECHECK_AGE_IN_MS;
 
   public static boolean isImageCached(Context context, String imageKey) {
     final File cacheFile = new File(getCacheDirectory(context), imageKey);
     return cacheFile.exists();
+  }
+
+  public static long getCacheRecheckAgeInMs() {
+    return cacheRecheckAgeInMs;
+  }
+
+  public static void setCacheRecheckAgeInMs(long cacheRecheckAgeInMs) {
+    ImageCache.cacheRecheckAgeInMs = cacheRecheckAgeInMs;
   }
 
   public static Bitmap loadImageFromMemoryCache(final String imageKey) {
