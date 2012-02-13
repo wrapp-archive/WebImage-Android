@@ -26,6 +26,7 @@ import android.graphics.BitmapFactory;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.util.Date;
 
 public class FileLoaderThread extends TaskQueueThread {
@@ -47,6 +48,7 @@ public class FileLoaderThread extends TaskQueueThread {
   protected Bitmap processRequest(ImageRequest request) {
     Bitmap bitmap = null;
 
+    FileInputStream inputStream = null;
     File cacheFile = new File(ImageCache.getCacheDirectory(request.context), request.imageKey);
     if(cacheFile.exists()) {
       try {
@@ -57,14 +59,24 @@ public class FileLoaderThread extends TaskQueueThread {
         }
 
         LogWrapper.logMessage("Loading image " + request.imageUrl + " from file cache");
-        // TODO: decodeFileDescriptor might be faster, see http://stackoverflow.com/a/7116158/14302
-        bitmap = BitmapFactory.decodeStream(new FileInputStream(cacheFile), null, request.loadOptions);
+        inputStream = new FileInputStream(cacheFile);
+        bitmap = BitmapFactory.decodeFileDescriptor(inputStream.getFD(), null, request.loadOptions);
         if(bitmap == null) {
           throw new Exception("Could not create bitmap from image " + request.imageUrl.toString());
         }
       }
       catch(Exception e) {
         LogWrapper.logException(e);
+      }
+      finally {
+        if(inputStream != null) {
+          try {
+            inputStream.close();
+          }
+          catch(IOException e) {
+            LogWrapper.logException(e);
+          }
+        }
       }
     }
 
