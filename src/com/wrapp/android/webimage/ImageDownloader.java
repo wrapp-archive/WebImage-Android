@@ -102,7 +102,7 @@ public class ImageDownloader {
       }
 
       bufferedInputStream = new BufferedInputStream(responseEntity.getContent());
-      File cacheFile = new File(ImageCache.getCacheDirectory(context), imageKey);
+      File cacheFile = File.createTempFile("image-", "tmp", ImageCache.getCacheDirectory(context));
       bufferedOutputStream = new BufferedOutputStream(new FileOutputStream(cacheFile));
 
       long contentSize = responseEntity.getContentLength();
@@ -129,6 +129,8 @@ public class ImageDownloader {
       }
       else {
         LogWrapper.logMessage("Downloaded image " + imageUrlString + " to file cache");
+        File outputFile = new File(ImageCache.getCacheDirectory(context), imageKey);
+        cacheFile.renameTo(outputFile);
       }
     }
     catch(IOException e) {
