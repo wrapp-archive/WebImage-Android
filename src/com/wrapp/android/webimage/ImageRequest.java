@@ -41,10 +41,6 @@ public final class ImageRequest {
     public void onBitmapLoadCancelled();
   }
 
-  public ImageRequest(final Context context, URL imageUrl, Listener listener) {
-    this(context, imageUrl, listener, false, null);
-  }
-
   public ImageRequest(final Context context, URL imageUrl, Listener listener, boolean cacheInMemory, BitmapFactory.Options options) {
     this.context = context;
     this.imageKey = ImageCache.getCacheKeyForUrl(imageUrl);
