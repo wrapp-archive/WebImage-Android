@@ -38,15 +38,14 @@ import java.util.Map;
 public class ImageCache {
   private static final long ONE_DAY_IN_SEC = 24 * 60 * 60;
   private static final long CACHE_RECHECK_AGE_IN_SEC = ONE_DAY_IN_SEC;
-  private static final long CACHE_RECHECK_AGE_IN_MS = CACHE_RECHECK_AGE_IN_SEC * 1000;
-  private static final long CACHE_EXPIRATION_AGE_IN_SEC = ONE_DAY_IN_SEC * 30;
+  public static final long CACHE_RECHECK_AGE_IN_MS = CACHE_RECHECK_AGE_IN_SEC * 1000;
+  public static final long CACHE_EXPIRATION_AGE_IN_SEC = ONE_DAY_IN_SEC * 30;
   private static final String DEFAULT_CACHE_SUBDIRECTORY_NAME = "images";
 
   private static File cacheDirectory;
   private static Map<String, WeakReference<Bitmap>> memoryCache = new HashMap<String, WeakReference<Bitmap>>();
 
-  public static boolean isImageCached(Context context, URL imageUrl) {
-    final String imageKey = getKeyForUrl(imageUrl);
+  public static boolean isImageCached(Context context, String imageKey) {
     final File cacheFile = new File(getCacheDirectory(context), imageKey);
     return cacheFile.exists();
   }
@@ -93,7 +92,7 @@ public class ImageCache {
     return bitmap;
   }
 
-  private static Bitmap loadImageFromMemoryCache(final String imageKey) {
+  public static Bitmap loadImageFromMemoryCache(final String imageKey) {
     synchronized(memoryCache) {
       if(memoryCache.containsKey(imageKey)) {
         // Apparently Android's SoftReference can sometimes free objects too early, see:
@@ -237,7 +236,7 @@ public class ImageCache {
   }
 
   public static void clearImageFromCaches(final Context context, final URL imageUrl) {
-    String imageKey = getKeyForUrl(imageUrl);
+    String imageKey = getCacheKeyForUrl(imageUrl);
     synchronized(memoryCache) {
       if(memoryCache.containsKey(imageKey)) {
         memoryCache.remove(imageKey);
@@ -316,7 +315,7 @@ public class ImageCache {
    * @param url Image URL
    * @return Hash for image URL
    */
-  public static String getKeyForUrl(URL url) {
+  public static String getCacheKeyForUrl(URL url) {
     String result = "";
 
     try {
