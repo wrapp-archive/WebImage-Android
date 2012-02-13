@@ -88,8 +88,7 @@ public class WebImageView extends ImageView implements ImageRequest.Listener {
    */
   public void setImageUrl(String imageUrlString) {
     try {
-      URL imageUrl = new URL(imageUrlString);
-      setImageUrl(imageUrl, false, null, null, null);
+      setImageUrl(new URL(imageUrlString));
     }
     catch(MalformedURLException e) {
       LogWrapper.logException(e);
@@ -103,7 +102,7 @@ public class WebImageView extends ImageView implements ImageRequest.Listener {
    */
   public void setImageUrl(URL imageUrl) {
     //noinspection NullableProblems
-    setImageUrl(imageUrl, false, null, null, null);
+    setImageUrl(imageUrl, false, null, 0, 0);
   }
 
   /**
