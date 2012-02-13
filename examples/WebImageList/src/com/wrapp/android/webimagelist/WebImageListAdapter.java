@@ -28,8 +28,6 @@ import android.widget.BaseAdapter;
 import com.wrapp.android.webimage.WebImageView;
 
 public class WebImageListAdapter extends BaseAdapter {
-  private static final boolean USE_NUMBER_IMAGES = true;
-  private static final boolean USE_AWESOME_IMAGES = true;
   private static final int NUM_IMAGES = 100;
   private static final int IMAGE_SIZE = 100;
 
@@ -47,20 +45,12 @@ public class WebImageListAdapter extends BaseAdapter {
   }
 
   private String getImageUrl(int i) {
-    if(USE_NUMBER_IMAGES) {
-      // Numbers with random backgrounds. More useful for testing correct listview behavior
-      return "http://static.nikreiman.com/numbers/" + i + ".png";
-    }
-    else {
-      if(USE_AWESOME_IMAGES) {
-        // Unicorns!
-        return "http://unicornify.appspot.com/avatar/" + i + "?s=" + IMAGE_SIZE;
-      }
-      else {
-        // Boring identicons
-        return "http://www.gravatar.com/avatar/" + i + "?s=" + IMAGE_SIZE + "&d=identicon";
-      }
-    }
+    // Numbers with random backgrounds. More useful for testing correct ListView behavior.
+    return "http://static.nikreiman.com/numbers/" + i + ".png";
+    // Unicorns!
+    // return "http://unicornify.appspot.com/avatar/" + i + "?s=" + IMAGE_SIZE;
+    // Generic Gravatar identicons
+    // return "http://www.gravatar.com/avatar/" + i + "?s=" + IMAGE_SIZE + "&d=identicon";
   }
 
   public Object getItem(int i) {
