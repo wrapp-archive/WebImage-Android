@@ -21,5 +21,54 @@
 
 package com.wrapp.android.webimage;
 
-public class FileLoaderThread {
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.util.Date;
+
+public class FileLoaderThread extends TaskQueueThread {
+  private static FileLoaderThread staticInstance;
+
+  public FileLoaderThread() {
+    super("FileLoader");
+    setPriority(Thread.NORM_PRIORITY);
+  }
+
+  public static FileLoaderThread getInstance() {
+    if(staticInstance == null) {
+      staticInstance = new FileLoaderThread();
+    }
+    return staticInstance;
+  }
+
+  @Override
+  protected Bitmap processRequest(ImageRequest request) {
+    Bitmap bitmap = null;
+    LogWrapper.logMessage("CMON");
+
+    File cacheFile = new File(ImageCache.getCacheDirectory(request.context), request.imageKey);
+    if(cacheFile.exists()) {
+      try {
+        Date now = new Date();
+        long fileAgeInMs = now.getTime() - cacheFile.lastModified();
+        if(fileAgeInMs > ImageCache.CACHE_RECHECK_AGE_IN_MS) {
+          CheckTimestampThread.getInstance().addTask(request);
+        }
+
+        LogWrapper.logMessage("Loading image from stream");
+        // TODO: decodeFileDescriptor might be faster, see http://stackoverflow.com/a/7116158/14302
+        bitmap = BitmapFactory.decodeStream(new FileInputStream(cacheFile), null, request.loadOptions);
+        if(bitmap == null) {
+          throw new Exception("Could not create bitmap from image: " + request.imageUrl.toString());
+        }
+      }
+      catch(Exception e) {
+        LogWrapper.logException(e);
+      }
+    }
+
+    return bitmap;
+  }
 }
