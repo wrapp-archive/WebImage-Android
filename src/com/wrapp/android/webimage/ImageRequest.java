@@ -29,6 +29,7 @@ import java.net.URL;
 
 public final class ImageRequest {
   public Context context;
+  public String imageKey;
   public URL imageUrl;
   public Listener listener;
   public boolean cacheInMemory;
@@ -46,6 +47,7 @@ public final class ImageRequest {
 
   public ImageRequest(final Context context, URL imageUrl, Listener listener, boolean cacheInMemory, BitmapFactory.Options options) {
     this.context = context;
+    this.imageKey = ImageCache.getCacheKeyForUrl(imageUrl);
     this.imageUrl = imageUrl;
     this.listener = listener;
     this.cacheInMemory = cacheInMemory;
