@@ -22,7 +22,6 @@
 package com.wrapp.android.webimage;
 
 import android.content.Context;
-import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 
 import java.net.URL;
@@ -36,7 +35,7 @@ public final class ImageRequest {
   public BitmapFactory.Options loadOptions;
 
   public interface Listener {
-    public void onBitmapLoaded(final Bitmap bitmap);
+    public void onBitmapLoaded(final RequestResponse requestResponse);
     public void onBitmapLoadError(String message);
     public void onBitmapLoadCancelled();
   }
