@@ -156,16 +156,23 @@ public class WebImageView extends ImageView implements ImageRequest.Listener {
    * If you only need a callback to be notified about the drawable being loaded to update other
    * GUI elements and whatnot, then you should override onImageLoaded() instead.
    *
-   * @param bitmap Bitmap returned from web/cache
+   * @param response Request response
    */
-  public void onBitmapLoaded(final Bitmap bitmap) {
-    postToGuiThread(new Runnable() {
-      public void run() {
-        setImageBitmap(bitmap);
+  public void onBitmapLoaded(final RequestResponse response) {
+    if(response.imageUrl.equals(currentImageUrl)) {
+      postToGuiThread(new Runnable() {
+        public void run() {
+          setImageBitmap(response.bitmap);
+        }
+      });
+      if(listener != null) {
+        listener.onImageLoadComplete();
       }
-    });
-    if(listener != null) {
-      listener.onImageLoadComplete();
+    }
+    else {
+      if(listener != null) {
+        listener.onImageLoadCancelled();
+      }
     }
   }
 
