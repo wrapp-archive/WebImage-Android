@@ -75,7 +75,6 @@ public abstract class TaskQueueThread extends Thread {
   }
 
   public void addTask(ImageRequest request) {
-    LogWrapper.logMessage(this.getName() + " adding request for " + request.imageKey);
     synchronized(pendingRequests) {
       pendingRequests.add(request);
       pendingRequests.notifyAll();

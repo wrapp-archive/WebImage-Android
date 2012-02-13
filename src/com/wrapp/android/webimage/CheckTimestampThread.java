@@ -43,6 +43,7 @@ public class CheckTimestampThread extends TaskQueueThread {
 
   @Override
   protected Bitmap processRequest(ImageRequest request) {
+    LogWrapper.logMessage("Requesting timestamp for " + request.imageUrl);
     Date expirationDate = ImageDownloader.getServerTimestamp(request.imageUrl);
     Date now = new Date();
     if(expirationDate.after(now)) {

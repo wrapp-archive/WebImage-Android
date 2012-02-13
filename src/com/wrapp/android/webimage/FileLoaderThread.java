@@ -56,11 +56,11 @@ public class FileLoaderThread extends TaskQueueThread {
           CheckTimestampThread.getInstance().addTask(request);
         }
 
-        LogWrapper.logMessage("Loading image from stream");
+        LogWrapper.logMessage("Loading image " + request.imageUrl + " from file cache");
         // TODO: decodeFileDescriptor might be faster, see http://stackoverflow.com/a/7116158/14302
         bitmap = BitmapFactory.decodeStream(new FileInputStream(cacheFile), null, request.loadOptions);
         if(bitmap == null) {
-          throw new Exception("Could not create bitmap from image: " + request.imageUrl.toString());
+          throw new Exception("Could not create bitmap from image " + request.imageUrl.toString());
         }
       }
       catch(Exception e) {

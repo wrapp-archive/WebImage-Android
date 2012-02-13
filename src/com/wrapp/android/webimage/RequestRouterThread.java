@@ -39,7 +39,6 @@ public class RequestRouterThread extends TaskQueueThread {
       return bitmap;
     }
     else if(ImageCache.isImageCached(request.context, request.imageKey)) {
-      LogWrapper.logMessage("Found image " + request.imageUrl + " in file cache");
       FileLoaderThread.getInstance().addTask(request);
     }
     else {

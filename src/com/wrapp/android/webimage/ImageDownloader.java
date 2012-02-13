@@ -65,7 +65,7 @@ public class ImageDownloader {
       if(imageUrlString == null || imageUrlString.length() == 0) {
         throw new Exception("Passed empty URL");
       }
-      LogWrapper.logMessage("Requesting image '" + imageUrlString + "'");
+      LogWrapper.logMessage("Requesting image " + imageUrlString);
       httpClient = getHttpClient();
       final HttpParams httpParams = httpClient.getParams();
       httpParams.setParameter(CoreConnectionPNames.SO_TIMEOUT, CONNECTION_TIMEOUT_IN_MS);
@@ -76,7 +76,7 @@ public class ImageDownloader {
 
       responseEntity = response.getEntity();
       if(responseEntity == null) {
-        throw new Exception("No response entity for image: " + imageUrl.toString());
+        throw new Exception("No response entity for image " + imageUrl.toString());
       }
       final StatusLine statusLine = response.getStatusLine();
       final int statusCode = statusLine.getStatusCode();
@@ -87,7 +87,7 @@ public class ImageDownloader {
         case HttpStatus.SC_MOVED_PERMANENTLY:
         case HttpStatus.SC_SEE_OTHER:
           final String location = response.getFirstHeader("Location").getValue();
-          LogWrapper.logMessage("Image redirected to: " + location);
+          LogWrapper.logMessage("Image redirected to " + location);
           // Force close the connection now, otherwise we risk leaking too many open HTTP connections
           responseEntity.consumeContent();
           responseEntity = null;
@@ -127,7 +127,9 @@ public class ImageDownloader {
         LogWrapper.logMessage("Short read! Expected " + contentSize + "b, got " + totalBytesRead);
         return false;
       }
-      LogWrapper.logMessage("Saved image " + imageKey + " to file cache");
+      else {
+        LogWrapper.logMessage("Downloaded image " + imageUrlString + " to file cache");
+      }
     }
     catch(IOException e) {
       LogWrapper.logException(e);
@@ -177,7 +179,7 @@ public class ImageDownloader {
       if(imageUrlString == null || imageUrlString.length() == 0) {
         throw new Exception("Passed empty URL");
       }
-      LogWrapper.logMessage("Requesting image '" + imageUrlString + "'");
+      LogWrapper.logMessage("Requesting image " + imageUrlString);
       httpClient = getHttpClient();
       final HttpParams httpParams = httpClient.getParams();
       httpParams.setParameter(CoreConnectionPNames.SO_TIMEOUT, CONNECTION_TIMEOUT_IN_MS);

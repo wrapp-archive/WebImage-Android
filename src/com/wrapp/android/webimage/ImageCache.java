@@ -108,7 +108,7 @@ public class ImageCache {
       cacheDirectory.mkdir();
     }
 
-    LogWrapper.logMessage("Cache directory is '" + cacheDirectory.toString() + "'");
+    LogWrapper.logMessage("Cache directory is " + cacheDirectory.toString());
 
     // WebImage versions prior to 1.2.2 stored images in /mnt/sdcard/data/packageName. If images are found
     // there, we should migrate them to the correct location. Unfortunately, WebImage 1.1.2 and below also
@@ -159,7 +159,7 @@ public class ImageCache {
     final File cacheFile = new File(getCacheDirectory(context), imageKey);
     if(cacheFile.exists()) {
       if(!cacheFile.delete()) {
-        LogWrapper.logMessage("Could not remove cached version of image '" + imageUrl + "'");
+        LogWrapper.logMessage("Could not remove cached version of image " + imageUrl);
       }
     }
   }
