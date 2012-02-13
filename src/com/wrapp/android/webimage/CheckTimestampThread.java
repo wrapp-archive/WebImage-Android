@@ -51,11 +51,9 @@ public class CheckTimestampThread extends TaskQueueThread {
       File cacheFile = new File(ImageCache.getCacheDirectory(request.context), request.imageKey);
       if(!cacheFile.setLastModified(now.getTime())) {
         LogWrapper.logMessage("Can't update timestamp!");
-        // Ugh, it seems that in some cases this call will always return false and refuse to update the timestamp
+        // TODO: It seems that in some cases this call will always return false and refuse to update the timestamp
         // For more info, see: http://code.google.com/p/android/issues/detail?id=18624
-        // In these cases, we manually re-write the file to disk. Yes, that sucks, but it's better than loosing
-        // the ability to do any intelligent file caching at all.
-        // TODO: saveImageInFileCache(imageKey, bitmap);
+        // This occurs on other devices, including my Galaxy Nexus. Not sure how many others have this bug.
       }
     }
     else {
