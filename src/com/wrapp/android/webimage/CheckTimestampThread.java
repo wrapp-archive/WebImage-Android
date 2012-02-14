@@ -44,11 +44,11 @@ public class CheckTimestampThread extends TaskQueueThread {
   @Override
   protected Bitmap processRequest(ImageRequest request) {
     LogWrapper.logMessage("Requesting timestamp for " + request.imageUrl);
+    File cacheFile = new File(ImageCache.getCacheDirectory(request.context), request.imageKey);
     Date expirationDate = ImageDownloader.getServerTimestamp(request.imageUrl);
     Date now = new Date();
     if(expirationDate.after(now)) {
       LogWrapper.logMessage("Cached version of " + request.imageUrl.toString() + " is still current, updating timestamp");
-      File cacheFile = new File(ImageCache.getCacheDirectory(request.context), request.imageKey);
       if(!cacheFile.setLastModified(now.getTime())) {
         LogWrapper.logMessage("Can't update timestamp!");
         // TODO: It seems that in some cases this call will always return false and refuse to update the timestamp
@@ -58,7 +58,14 @@ public class CheckTimestampThread extends TaskQueueThread {
     }
     else {
       LogWrapper.logMessage("Cached version of " + request.imageUrl.toString() + " found, but has expired.");
-      DownloadThread.getInstance().addTask(request);
+      if(cacheFile.delete()) {
+        LogWrapper.logMessage("Deleted cached file, redownloading");
+        DownloadThread.getInstance().addTask(request);
+      }
+      else {
+        LogWrapper.logMessage("Could not delete file, trying again on exit");
+        cacheFile.deleteOnExit();
+      }
     }
     return null;
   }
