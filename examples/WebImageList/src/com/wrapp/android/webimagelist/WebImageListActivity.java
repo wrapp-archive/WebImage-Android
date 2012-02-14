@@ -140,9 +140,6 @@ public class WebImageListActivity extends ListActivity implements WebImageView.L
       case R.id.MainMenuShowMemoryUse:
         showMemoryUsageToast();
         break;
-      case R.id.MainMenuToggleMemoryCache:
-        toggleMemoryCache();
-        break;
       case R.id.MainMenuRestrictMemoryUse:
         toggleRestrictMemoryUsage();
         break;
@@ -203,23 +200,12 @@ public class WebImageListActivity extends ListActivity implements WebImageView.L
     final WebImageListAdapter webImageListAdapter = (WebImageListAdapter)getListAdapter();
     final boolean shouldRestrictMemoryUsage = !webImageListAdapter.getShouldRestrictMemoryUsage();
     webImageListAdapter.setShouldRestrictMemoryUsage(shouldRestrictMemoryUsage);
-    webImageListAdapter.setShouldCacheImagesInMemory(shouldRestrictMemoryUsage);
     WebImage.cancelAllRequests();
-    WebImage.clearMemoryCaches();
     WebImage.clearOldCacheFiles(this, 0);
     final String toastMessage = "Restrict memory usage: " + (shouldRestrictMemoryUsage ? "enabled" : "disabled");
     Toast toast = Toast.makeText(this, toastMessage, Toast.LENGTH_SHORT);
     toast.show();
     refresh();
-  }
-
-  private void toggleMemoryCache() {
-    final WebImageListAdapter webImageListAdapter = (WebImageListAdapter)getListAdapter();
-    final boolean shouldCacheImagesInMemory = !webImageListAdapter.getShouldCacheImagesInMemory();
-    webImageListAdapter.setShouldCacheImagesInMemory(shouldCacheImagesInMemory);
-    final String toastMessage = "Memory cache: " + (shouldCacheImagesInMemory ? "enabled" : "disabled");
-    Toast toast = Toast.makeText(this, toastMessage, Toast.LENGTH_SHORT);
-    toast.show();
   }
 
   public void showMemoryUsageToast() {

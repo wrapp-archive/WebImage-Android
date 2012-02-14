@@ -32,7 +32,6 @@ public class WebImageListAdapter extends BaseAdapter {
   private static final int IMAGE_SIZE = 100;
 
   private WebImageView.Listener listener;
-  private boolean shouldCacheImagesInMemory = true;
   private boolean shouldRestrictMemoryUsage = false;
   private static BitmapFactory.Options options = new BitmapFactory.Options();
 
@@ -73,14 +72,6 @@ public class WebImageListAdapter extends BaseAdapter {
     containerView.setImageUrl(getImageUrl(i), listener, shouldCacheImagesInMemory, options);
     containerView.setImageText("Image #" + i);
     return containerView;
-  }
-
-  public boolean getShouldCacheImagesInMemory() {
-    return shouldCacheImagesInMemory;
-  }
-
-  public void setShouldCacheImagesInMemory(boolean shouldCacheImagesInMemory) {
-    this.shouldCacheImagesInMemory = shouldCacheImagesInMemory;
   }
 
   public boolean getShouldRestrictMemoryUsage() {

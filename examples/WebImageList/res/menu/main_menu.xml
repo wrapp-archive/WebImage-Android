@@ -26,8 +26,6 @@
     android:title="@string/menu_refresh"/>
   <item android:id="@+id/MainMenuClearCachesItem"
     android:title="@string/menu_clear_caches"/>
-  <item android:id="@+id/MainMenuToggleMemoryCache"
-    android:title="@string/menu_toggle_memory_cache"/>
   <item android:id="@+id/MainMenuShowMemoryUse"
     android:title="@string/menu_show_memory_use"/>
   <item android:id="@+id/MainMenuRestrictMemoryUse"
