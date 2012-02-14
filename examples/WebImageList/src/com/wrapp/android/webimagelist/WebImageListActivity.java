@@ -34,6 +34,7 @@ import android.view.MenuItem;
 import android.view.Window;
 import android.widget.Toast;
 import com.wrapp.android.webimage.ImageCache;
+import com.wrapp.android.webimage.LogWrapper;
 import com.wrapp.android.webimage.WebImage;
 import com.wrapp.android.webimage.WebImageView;
 
@@ -97,15 +98,11 @@ public class WebImageListActivity extends ListActivity implements WebImageView.L
     WebImage.cancelAllRequests();
   }
 
-  /**
-   * When the low memory warning is received, tell the WebImage class to free all memory caches. Note
-   * that this method is called when the system is short on memory, not your app. If your app hits the
-   * memory limit, this method will not be called.
-   */
   @Override
-  public void onLowMemory() {
-    super.onLowMemory();
-    WebImage.clearMemoryCaches();
+  protected void onStop() {
+    super.onStop();
+    LogWrapper.logMessage("Stopping activity");
+    WebImage.shutdown();
   }
 
   @Override
