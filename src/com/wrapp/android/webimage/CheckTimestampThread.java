@@ -27,18 +27,18 @@ import java.io.File;
 import java.util.Date;
 
 public class CheckTimestampThread extends TaskQueueThread {
-  private static CheckTimestampThread staticInstance;
-
-  public CheckTimestampThread() {
-    super("CheckTimestamp");
-    setPriority(Thread.MIN_PRIORITY);
-  }
+  static CheckTimestampThread staticInstance;
 
   public static CheckTimestampThread getInstance() {
     if(staticInstance == null) {
       staticInstance = new CheckTimestampThread();
     }
     return staticInstance;
+  }
+
+  private CheckTimestampThread() {
+    super("CheckTimestamp");
+    setPriority(Thread.MIN_PRIORITY);
   }
 
   @Override

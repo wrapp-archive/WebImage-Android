@@ -24,8 +24,18 @@ package com.wrapp.android.webimage;
 import android.graphics.Bitmap;
 
 public class RequestRouterThread extends TaskQueueThread {
-  public RequestRouterThread() {
+  protected static RequestRouterThread staticInstance;
+
+  public static RequestRouterThread getInstance() {
+    if(staticInstance == null) {
+      staticInstance = new RequestRouterThread();
+    }
+    return staticInstance;
+  }
+
+  private RequestRouterThread() {
     super("RequestRouter");
+    setPriority(Thread.NORM_PRIORITY - 1);
   }
 
   @Override

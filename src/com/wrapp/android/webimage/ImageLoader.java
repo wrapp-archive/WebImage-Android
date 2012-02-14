@@ -36,7 +36,7 @@ public class ImageLoader {
   private CheckTimestampThread checkTimestampThread;
   private DownloadThread downloadThread;
 
-  private static ImageLoader getInstance() {
+  public static ImageLoader getInstance() {
     if(staticInstance == null) {
       staticInstance = new ImageLoader();
     }
@@ -50,7 +50,7 @@ public class ImageLoader {
     checkTimestampThread.start();
     downloadThread = DownloadThread.getInstance();
     downloadThread.start();
-    requestRouterThread = new RequestRouterThread();
+    requestRouterThread = RequestRouterThread.getInstance();
     requestRouterThread.start();
   }
 
@@ -60,7 +60,7 @@ public class ImageLoader {
   }
 
   public static void cancelAllRequests() {
-    ImageLoader imageLoader = getInstance();
+    final ImageLoader imageLoader = getInstance();
     imageLoader.requestRouterThread.cancelAllRequests();
     imageLoader.fileLoaderThread.cancelAllRequests();
     imageLoader.checkTimestampThread.cancelAllRequests();

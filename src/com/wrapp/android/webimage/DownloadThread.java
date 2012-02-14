@@ -24,18 +24,18 @@ package com.wrapp.android.webimage;
 import android.graphics.Bitmap;
 
 public class DownloadThread extends TaskQueueThread {
-  private static DownloadThread staticInstance;
-
-  public DownloadThread() {
-    super("Download");
-    setPriority(Thread.MIN_PRIORITY);
-  }
+  static DownloadThread staticInstance;
 
   public static DownloadThread getInstance() {
     if(staticInstance == null) {
       staticInstance = new DownloadThread();
     }
     return staticInstance;
+  }
+
+  private DownloadThread() {
+    super("Download");
+    setPriority(Thread.MIN_PRIORITY);
   }
 
   @Override

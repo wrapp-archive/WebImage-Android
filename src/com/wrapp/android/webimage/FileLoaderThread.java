@@ -30,18 +30,19 @@ import java.io.IOException;
 import java.util.Date;
 
 public class FileLoaderThread extends TaskQueueThread {
-  private static FileLoaderThread staticInstance;
-
-  public FileLoaderThread() {
-    super("FileLoader");
-    setPriority(Thread.NORM_PRIORITY);
-  }
+  static FileLoaderThread staticInstance;
 
   public static FileLoaderThread getInstance() {
     if(staticInstance == null) {
       staticInstance = new FileLoaderThread();
     }
     return staticInstance;
+  }
+
+  private FileLoaderThread() {
+    super("FileLoader");
+    // Set to be slightly below normal priority so that the GUI thread runs a bit snappier
+    setPriority(Thread.NORM_PRIORITY - 1);
   }
 
   @Override
