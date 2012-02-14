@@ -32,6 +32,7 @@ public final class ImageRequest {
   public URL imageUrl;
   public Listener listener;
   public BitmapFactory.Options loadOptions;
+  public boolean forceDownload = false;
 
   public interface Listener {
     public void onBitmapLoaded(final RequestResponse requestResponse);

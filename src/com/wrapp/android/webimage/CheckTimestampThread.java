@@ -58,14 +58,9 @@ public class CheckTimestampThread extends TaskQueueThread {
     }
     else {
       LogWrapper.logMessage("Cached version of " + request.imageUrl.toString() + " found, but has expired.");
-      if(cacheFile.delete()) {
-        LogWrapper.logMessage("Deleted cached file, redownloading");
-        DownloadThread.getInstance().addTask(request);
-      }
-      else {
-        LogWrapper.logMessage("Could not delete file, trying again on exit");
-        cacheFile.deleteOnExit();
-      }
+      cacheFile.delete();
+      request.forceDownload = true;
+      DownloadThread.getInstance().addTask(request);
     }
     return null;
   }
