@@ -53,9 +53,14 @@ public class ImageCache {
     ImageCache.cacheRecheckAgeInMs = cacheRecheckAgeInMs;
   }
 
+  public static File getCacheDirectory(final Context context) {
+    boolean canWriteToExternalStorage = Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED);
+    if(!canWriteToExternalStorage) {
+      LogWrapper.logMessage("Can't write to external storage, using app's internal cache");
+      cacheDirectory = null;
+      return getInternalCacheDirectory(context);
     }
 
-  public static File getCacheDirectory(final Context context) {
     if(cacheDirectory == null) {
       setCacheDirectory(context, DEFAULT_CACHE_SUBDIRECTORY_NAME);
     }
@@ -129,14 +134,18 @@ public class ImageCache {
     }
   }
 
-  public static void clearImageFromCaches(final Context context, final URL imageUrl) {
-    String imageKey = getCacheKeyForUrl(imageUrl);
-    synchronized(memoryCache) {
-      if(memoryCache.containsKey(imageKey)) {
-        memoryCache.remove(imageKey);
+  public static File getInternalCacheDirectory(Context context) {
+    File internalCacheDirectory = new File(context.getCacheDir(), "temp-images");
+    if(!internalCacheDirectory.exists()) {
+      if(!internalCacheDirectory.mkdir()) {
+        LogWrapper.logMessage("Failed creating temporary storage directory, this is probably not good");
       }
     }
+    return internalCacheDirectory;
+  }
 
+  public static void clearImageFromCaches(final Context context, final URL imageUrl) {
+    String imageKey = getCacheKeyForUrl(imageUrl);
     final File cacheFile = new File(getCacheDirectory(context), imageKey);
     if(cacheFile.exists()) {
       if(!cacheFile.delete()) {
@@ -160,16 +169,29 @@ public class ImageCache {
    * @param cacheAgeInSec Image expiration limit, in seconds
    */
   public static void clearOldCacheFiles(final Context context, long cacheAgeInSec) {
-    final long cacheAgeInMs = cacheAgeInSec * 1000;
-    Date now = new Date();
-    String[] cacheFiles = getCacheDirectory(context).list();
+    // Clear all files from the temporary cache if external storage is available
+    // TODO: This could technically be moved to external storage, but whatever
+    final File internalCacheDirectory = getInternalCacheDirectory(context);
+    String[] cacheFiles = internalCacheDirectory.list();
     if(cacheFiles != null) {
       for(String child : cacheFiles) {
-        File childFile = new File(getCacheDirectory(context), child);
+        File childFile = new File(internalCacheDirectory, child);
+        LogWrapper.logMessage("Deleting image '" + child + "' from internal cache");
+        childFile.delete();
+      }
+    }
+
+    final long cacheAgeInMs = cacheAgeInSec * 1000;
+    Date now = new Date();
+    final File externalCacheDirectory = getCacheDirectory(context);
+    cacheFiles = externalCacheDirectory.list();
+    if(cacheFiles != null) {
+      for(String child : cacheFiles) {
+        File childFile = new File(externalCacheDirectory, child);
         if(childFile.isFile()) {
           long fileAgeInMs = now.getTime() - childFile.lastModified();
           if(fileAgeInMs > cacheAgeInMs) {
-            LogWrapper.logMessage("Deleting image '" + child + "' from cache");
+            LogWrapper.logMessage("Deleting image '" + child + "' from external cache");
             childFile.delete();
           }
         }
