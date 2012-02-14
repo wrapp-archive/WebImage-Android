@@ -46,6 +46,14 @@ public class WebImageView extends ImageView implements ImageRequest.Listener {
   private int placeholderImageResId;
   private URL currentImageUrl;
 
+  private enum States {
+    EMPTY,
+    LOADING,
+    LOADED,
+    ERROR,
+  }
+  private States currentState = States.EMPTY;
+
   public interface Listener {
     public void onImageLoadStarted();
     public void onImageLoadComplete();
@@ -120,7 +128,11 @@ public class WebImageView extends ImageView implements ImageRequest.Listener {
     if(imageUrl == null) {
       return;
     }
+    else if(imageUrl.equals(currentImageUrl) && currentState == States.LOADED) {
+      return;
+    }
 
+    currentState = States.LOADING;
     this.errorImageResId = errorImageResId;
     if(this.placeholderImageResId > 0) {
       setImageResource(this.placeholderImageResId);
@@ -150,6 +162,7 @@ public class WebImageView extends ImageView implements ImageRequest.Listener {
    * @param response Request response
    */
   public void onBitmapLoaded(final RequestResponse response) {
+    currentState = States.LOADED;
     if(response.imageUrl.equals(currentImageUrl)) {
       postToGuiThread(new Runnable() {
         public void run() {
@@ -173,6 +186,7 @@ public class WebImageView extends ImageView implements ImageRequest.Listener {
    * @param message Error message (non-localized)
    */
   public void onBitmapLoadError(String message) {
+    currentState = States.ERROR;
     LogWrapper.logMessage(message);
     postToGuiThread(new Runnable() {
       public void run() {
@@ -187,6 +201,14 @@ public class WebImageView extends ImageView implements ImageRequest.Listener {
     });
     if(listener != null) {
       listener.onImageLoadError();
+    }
+  }
+
+  @Override
+  protected void onWindowVisibilityChanged(int visibility) {
+    super.onWindowVisibilityChanged(visibility);
+    if(visibility == VISIBLE && currentState == States.LOADING) {
+      setImageUrl(currentImageUrl);
     }
   }
 
