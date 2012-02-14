@@ -35,7 +35,6 @@ import java.net.URL;
  * ImageView successor class which can load images asynchronously from the web. This class
  * is safe to use in ListAdapters or views which may trigger many simultaneous requests.
  */
-@SuppressWarnings({"UnusedDeclaration"})
 public class WebImageView extends ImageView implements ImageRequest.Listener {
   Handler uiHandler;
   private Listener listener;
@@ -54,16 +53,19 @@ public class WebImageView extends ImageView implements ImageRequest.Listener {
     public void onImageLoadCancelled();
   }
 
+  @SuppressWarnings({"UnusedDeclaration"})
   public WebImageView(Context context) {
     super(context);
     initialize();
   }
 
+  @SuppressWarnings({"UnusedDeclaration"})
   public WebImageView(Context context, AttributeSet attrs) {
     super(context, attrs);
     initialize();
   }
 
+  @SuppressWarnings({"UnusedDeclaration"})
   public WebImageView(Context context, AttributeSet attrs, int defStyle) {
     super(context, attrs, defStyle);
     initialize();
@@ -208,18 +210,22 @@ public class WebImageView extends ImageView implements ImageRequest.Listener {
     uiHandler.post(runnable);
   }
 
+  @SuppressWarnings("UnusedDeclaration")
   public void setErrorImageResId(int errorImageResId) {
     this.errorImageResId = errorImageResId;
   }
 
+  @SuppressWarnings("UnusedDeclaration")
   public void setErrorImage(Drawable errorImage) {
     this.errorImage = errorImage;
   }
 
+  @SuppressWarnings("UnusedDeclaration")
   public void setPlaceholderImage(Drawable placeholderImage) {
     this.placeholderImage = placeholderImage;
   }
 
+  @SuppressWarnings("UnusedDeclaration")
   public void setPlaceholderImageResId(int placeholderImageResId) {
     this.placeholderImageResId = placeholderImageResId;
   }
