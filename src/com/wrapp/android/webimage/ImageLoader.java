@@ -66,4 +66,18 @@ public class ImageLoader {
     imageLoader.checkTimestampThread.cancelAllRequests();
     imageLoader.downloadThread.cancelAllRequests();
   }
+
+  public static void shutdown() {
+    LogWrapper.logMessage("Shutting down");
+    final ImageLoader imageLoader = getInstance();
+    imageLoader.requestRouterThread.shutdown();
+    RequestRouterThread.staticInstance = null;
+    imageLoader.fileLoaderThread.shutdown();
+    FileLoaderThread.staticInstance = null;
+    imageLoader.checkTimestampThread.shutdown();
+    CheckTimestampThread.staticInstance = null;
+    imageLoader.downloadThread.shutdown();
+    DownloadThread.staticInstance = null;
+    staticInstance = null;
+  }
 }

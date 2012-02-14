@@ -26,10 +26,11 @@ import android.graphics.Bitmap;
 import java.util.*;
 
 public abstract class TaskQueueThread extends Thread {
+  private static final long SHUTDOWN_TIMEOUT_IN_MS = 100;
   private final Queue<ImageRequest> pendingRequests;
+  private boolean isRunning;
 
   protected abstract Bitmap processRequest(ImageRequest request);
-
 
   public TaskQueueThread(final String taskName) {
     super(taskName);
@@ -38,40 +39,52 @@ public abstract class TaskQueueThread extends Thread {
 
   @Override
   public void run() {
+    LogWrapper.logMessage("Starting up task " + getName());
     ImageRequest request;
-    while(true) {
+    isRunning = true;
+    while(isRunning) {
       synchronized(pendingRequests) {
-        while(pendingRequests.isEmpty()) {
+        while(pendingRequests.isEmpty() && isRunning) {
           try {
             pendingRequests.wait();
           }
           catch(InterruptedException e) {
-            // Log, but otherwise ignore. Not a big deal.
-            LogWrapper.logException(e);
+            isRunning = false;
+            break;
           }
         }
 
         request = getNextRequest(pendingRequests);
       }
 
-      try {
-        Bitmap bitmap = processRequest(request);
-        if(pruneDuplicateRequests(request, pendingRequests)) {
-          if(bitmap != null) {
-            request.listener.onBitmapLoaded(new RequestResponse(bitmap, request.imageUrl));
+      if(request != null) {
+        try {
+          Bitmap bitmap = processRequest(request);
+          if(pruneDuplicateRequests(request, pendingRequests)) {
+            if(bitmap != null) {
+              request.listener.onBitmapLoaded(new RequestResponse(bitmap, request.imageUrl));
+            }
+            else {
+              request.listener.onBitmapLoadCancelled();
+            }
           }
           else {
             request.listener.onBitmapLoadCancelled();
           }
         }
-        else {
-          request.listener.onBitmapLoadCancelled();
+        catch(Exception e) {
+          request.listener.onBitmapLoadError(e.getMessage());
         }
       }
-      catch(Exception e) {
-        request.listener.onBitmapLoadError(e.getMessage());
-      }
     }
+
+    LogWrapper.logMessage("Shutting down task " + getName());
+  }
+
+  @Override
+  public void interrupt() {
+    super.interrupt();
+    isRunning = false;
   }
 
   public void addTask(ImageRequest request) {
@@ -124,8 +137,19 @@ public abstract class TaskQueueThread extends Thread {
     synchronized(pendingRequests) {
       for(ImageRequest request : pendingRequests) {
         request.listener.onBitmapLoadCancelled();
+        request.listener = null;
       }
       pendingRequests.clear();
+    }
+  }
+
+  public void shutdown() {
+    try {
+      interrupt();
+      join(SHUTDOWN_TIMEOUT_IN_MS);
+    }
+    catch(InterruptedException e) {
+      LogWrapper.logException(e);
     }
   }
 }

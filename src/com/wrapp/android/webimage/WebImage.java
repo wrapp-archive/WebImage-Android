@@ -115,4 +115,11 @@ public class WebImage {
   public static void enableLogging(String tag, int level) {
     LogWrapper.enableLogging(tag, level);
   }
+
+  /**
+   * Stop all background threads. Call this when your activity quits.
+   */
+  public static void shutdown() {
+    ImageLoader.shutdown();
+  }
 }
