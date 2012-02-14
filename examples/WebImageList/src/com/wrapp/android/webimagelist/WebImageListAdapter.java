@@ -69,7 +69,7 @@ public class WebImageListAdapter extends BaseAdapter {
       containerView = new WebImageContainerView(parentViewGroup.getContext());
     }
 
-    containerView.setImageUrl(getImageUrl(i), listener, shouldCacheImagesInMemory, options);
+    containerView.setImageUrl(getImageUrl(i), listener, options);
     containerView.setImageText("Image #" + i);
     return containerView;
   }

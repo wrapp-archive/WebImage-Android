@@ -83,9 +83,9 @@ public class WebImageView extends ImageView implements ImageRequest.Listener {
 
   /**
    * Load an image asynchronously from the web
-   * @param imageUrlString Image URL to download image from. By default, this image will be cached to
-   * disk (ie, SD card), but not in memory.
+   * @param imageUrlString Image URL to download image from
    */
+  @SuppressWarnings("UnusedDeclaration")
   public void setImageUrl(String imageUrlString) {
     try {
       setImageUrl(new URL(imageUrlString));
@@ -97,28 +97,25 @@ public class WebImageView extends ImageView implements ImageRequest.Listener {
 
   /**
    * Load an image asynchronously from the web
-   * @param imageUrl Image URL to download image from. By default, this image will be cached to
-   * disk (ie, SD card), but not in memory.
+   * @param imageUrl Image URL to download image from
    */
+  @SuppressWarnings("UnusedDeclaration")
   public void setImageUrl(URL imageUrl) {
     //noinspection NullableProblems
-    setImageUrl(imageUrl, false, null, 0, 0);
+    setImageUrl(imageUrl, null, 0, 0);
   }
 
   /**
    * Load an image asynchronously from the web
    * @param imageUrl Image URL to download image from
-   * @param cacheInMemory True to keep the downloaded drawable in the memory cache. Set to true for faster
-   * access, but be careful about using this flag, as it can consume a lot of memory. This is recommended
-   * only for activities which re-use the same images frequently.
    * @param options Options to use when loading the image. See the documentation for {@link BitmapFactory.Options}
    * for more details. Can be null.
    * @param errorImageResId Resource ID  to be displayed in case the image could not be loaded. If 0, no new image
    * will be displayed on error.
    * @param placeholderImageResId Resource ID to set for placeholder image while image is loading.
    */
-  public void setImageUrl(URL imageUrl, boolean cacheInMemory, BitmapFactory.Options options, int errorImageResId, int placeholderImageResId) {
-    if(imageUrl.equals(currentImageUrl)) {
+  public void setImageUrl(URL imageUrl, BitmapFactory.Options options, int errorImageResId, int placeholderImageResId) {
+    if(imageUrl == null) {
       return;
     }
 
@@ -136,7 +133,7 @@ public class WebImageView extends ImageView implements ImageRequest.Listener {
       listener.onImageLoadStarted();
     }
     currentImageUrl = imageUrl;
-    ImageLoader.load(getContext(), imageUrl, this, cacheInMemory, options);
+    ImageLoader.load(getContext(), imageUrl, this, options);
   }
 
   /**

@@ -60,11 +60,11 @@ public class WebImageContainerView extends RelativeLayout {
     imageText = (TextView)findViewById(R.id.WebImageViewText);
   }
 
-  public void setImageUrl(String imageUrlString, WebImageView.Listener listener, boolean shouldCacheImagesInMemory, BitmapFactory.Options options) {
+  public void setImageUrl(String imageUrlString, WebImageView.Listener listener, BitmapFactory.Options options) {
     try {
       URL imageUrl = new URL(imageUrlString);
       webImageView.setListener(listener);
-      webImageView.setImageUrl(imageUrl, shouldCacheImagesInMemory, options, R.drawable.person_placeholder_error, R.drawable.person_placeholder);
+      webImageView.setImageUrl(imageUrl, options, R.drawable.person_placeholder_error, R.drawable.person_placeholder);
     }
     catch(MalformedURLException e) {
       e.printStackTrace();

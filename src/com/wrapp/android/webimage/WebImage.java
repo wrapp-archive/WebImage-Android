@@ -40,7 +40,7 @@ public class WebImage {
    * @param listener Object which will be notified when the request is complete
    */
   public static void load(final Context context, URL imageUrl, ImageRequest.Listener listener) {
-    ImageLoader.load(context, imageUrl, listener, false, null);
+    ImageLoader.load(context, imageUrl, listener, null);
   }
 
   /**
@@ -50,15 +50,11 @@ public class WebImage {
    * @param context Context used for getting app's package name
    * @param imageUrl URL to load the image from
    * @param listener Object which will be notified when the request is complete
-   * @param cacheInMemory If true, then keep a copy of the drawable in memory for quick access.
-   * Be careful about using this flag; although WebImage tries to minimize memory consumption and
-   * uses soft references, it is easy to exceed the device's VM limits and get OutOfMemory
-   * exceptions.
    * @param options Options to use when loading the image. See the documentation for {@link BitmapFactory.Options}
    * for more details. Can be null.
    */
-  public static void load(final Context context, URL imageUrl, ImageRequest.Listener listener, boolean cacheInMemory, BitmapFactory.Options options) {
-    ImageLoader.load(context, imageUrl, listener, cacheInMemory, options);
+  public static void load(final Context context, URL imageUrl, ImageRequest.Listener listener, BitmapFactory.Options options) {
+    ImageLoader.load(context, imageUrl, listener, options);
   }
 
   /**
@@ -82,14 +78,6 @@ public class WebImage {
   }
 
   /**
-   * Empty the first-try memory cache. The parent activity should call this method when it receives
-   * low memory warnings.
-   */
-  public static void clearMemoryCaches() {
-    ImageCache.clearMemoryCaches();
-  }
-
-  /**
    * Remove old files from the file cache. The parent application should call this method once during
    * initialization to prevent the file cache from growing too large.
    * @param context Context used for getting app's package name
@@ -109,7 +97,7 @@ public class WebImage {
   }
 
   /**
-   * Remove a single image from both the memory and disk caches
+   * Remove a single image from the disk cache
    * @param context Context used for getting app's package name
    * @param imageUrl Image URL to remove
    */

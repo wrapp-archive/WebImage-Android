@@ -22,16 +22,13 @@
 package com.wrapp.android.webimage;
 
 import android.content.Context;
-import android.graphics.Bitmap;
+import android.os.Environment;
 
 import java.io.File;
-import java.lang.ref.WeakReference;
 import java.net.URL;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
 
 public class ImageCache {
   private static final long ONE_DAY_IN_SEC = 24 * 60 * 60;
@@ -41,7 +38,6 @@ public class ImageCache {
   private static final String DEFAULT_CACHE_SUBDIRECTORY_NAME = "images";
 
   private static File cacheDirectory;
-  private static Map<String, WeakReference<Bitmap>> memoryCache = new HashMap<String, WeakReference<Bitmap>>();
   private static long cacheRecheckAgeInMs = CACHE_RECHECK_AGE_IN_MS;
 
   public static boolean isImageCached(Context context, String imageKey) {
@@ -57,31 +53,7 @@ public class ImageCache {
     ImageCache.cacheRecheckAgeInMs = cacheRecheckAgeInMs;
   }
 
-  public static Bitmap loadImageFromMemoryCache(final String imageKey) {
-    synchronized(memoryCache) {
-      if(memoryCache.containsKey(imageKey)) {
-        // Apparently Android's SoftReference can sometimes free objects too early, see:
-        // http://groups.google.com/group/android-developers/browse_thread/thread/ebabb0dadf38acc1
-        // If that happens then it's no big deal, as this class will simply re-load the image
-        // from file, but if that is the case then we should be polite and remove the imageKey
-        // from the cache to reflect the actual caching state of this image.
-        final Bitmap bitmap = memoryCache.get(imageKey).get();
-        if(bitmap == null) {
-          memoryCache.remove(imageKey);
-        }
-        return bitmap;
-      }
-      else {
-        return null;
-      }
     }
-  }
-
-  private static void saveImageInMemoryCache(String imageKey, final Bitmap bitmap) {
-    synchronized(memoryCache) {
-      memoryCache.put(imageKey, new WeakReference<Bitmap>(bitmap));
-    }
-  }
 
   public static File getCacheDirectory(final Context context) {
     if(cacheDirectory == null) {
@@ -204,27 +176,6 @@ public class ImageCache {
       }
     }
   }
-
-  /**
-   * Remove all images from the fast in-memory cache. This should be called to free up memory
-   * when receiving onLowMemory warnings or when the activity knows it has no use for the items
-   * in the memory cache anymore.
-   */
-  public static void clearMemoryCaches() {
-    if(memoryCache != null) {
-      synchronized(memoryCache) {
-        LogWrapper.logMessage("Emptying in-memory cache");
-        for(String key : memoryCache.keySet()) {
-          WeakReference reference = memoryCache.get(key);
-          if(reference != null) {
-            reference.clear();
-          }
-        }
-        memoryCache.clear();
-      }
-    }
-  }
-
 
   private static final char[] HEX_CHARACTERS = {
     '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'

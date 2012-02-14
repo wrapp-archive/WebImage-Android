@@ -30,15 +30,7 @@ public class RequestRouterThread extends TaskQueueThread {
 
   @Override
   protected Bitmap processRequest(ImageRequest request) {
-    // Check possible locations for the image from fastest to slowest, sending the
-    // request to the respective thread, with the exception of memory cache hits
-    // which are handled immediately.
-    final Bitmap bitmap = ImageCache.loadImageFromMemoryCache(request.imageKey);
-    if(bitmap != null) {
-      LogWrapper.logMessage("Found image " + request.imageUrl + " in memory cache");
-      return bitmap;
-    }
-    else if(ImageCache.isImageCached(request.context, request.imageKey)) {
+    if(ImageCache.isImageCached(request.context, request.imageKey)) {
       FileLoaderThread.getInstance().addTask(request);
     }
     else {

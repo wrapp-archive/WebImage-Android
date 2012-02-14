@@ -31,7 +31,6 @@ public final class ImageRequest {
   public String imageKey;
   public URL imageUrl;
   public Listener listener;
-  public boolean cacheInMemory;
   public BitmapFactory.Options loadOptions;
 
   public interface Listener {
@@ -40,12 +39,11 @@ public final class ImageRequest {
     public void onBitmapLoadCancelled();
   }
 
-  public ImageRequest(final Context context, URL imageUrl, Listener listener, boolean cacheInMemory, BitmapFactory.Options options) {
+  public ImageRequest(final Context context, URL imageUrl, Listener listener, BitmapFactory.Options options) {
     this.context = context;
     this.imageKey = ImageCache.getCacheKeyForUrl(imageUrl);
     this.imageUrl = imageUrl;
     this.listener = listener;
-    this.cacheInMemory = cacheInMemory;
     this.loadOptions = options;
   }
 }

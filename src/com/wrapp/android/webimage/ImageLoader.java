@@ -54,8 +54,9 @@ public class ImageLoader {
     requestRouterThread.start();
   }
 
-  public static void load(final Context context, URL imageUrl, ImageRequest.Listener listener, boolean cacheInMemory, BitmapFactory.Options options) {
-    getInstance().requestRouterThread.addTask(new ImageRequest(context, imageUrl, listener, cacheInMemory, options));
+  public static void load(final Context context, URL imageUrl, ImageRequest.Listener listener, BitmapFactory.Options options) {
+    final ImageLoader instance = getInstance();
+    instance.requestRouterThread.addTask(new ImageRequest(context, imageUrl, listener, options));
   }
 
   public static void cancelAllRequests() {
