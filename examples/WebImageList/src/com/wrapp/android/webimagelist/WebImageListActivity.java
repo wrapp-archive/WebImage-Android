@@ -23,6 +23,7 @@ package com.wrapp.android.webimagelist;
 
 import android.app.ActivityManager;
 import android.app.ListActivity;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.os.Bundle;
 import android.os.Debug;
@@ -33,10 +34,7 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.Window;
 import android.widget.Toast;
-import com.wrapp.android.webimage.ImageCache;
-import com.wrapp.android.webimage.LogWrapper;
-import com.wrapp.android.webimage.WebImage;
-import com.wrapp.android.webimage.WebImageView;
+import com.wrapp.android.webimage.*;
 
 public class WebImageListActivity extends ListActivity implements WebImageView.Listener {
   // Don't show the progress spinner right away, because when scrolling rapidly through the list
@@ -60,6 +58,7 @@ public class WebImageListActivity extends ListActivity implements WebImageView.L
 
   // Used when toggling cache recheck time from menu
   private long defaultCacheRecheckAgeInMs = ImageCache.getCacheRecheckAgeInMs();
+  private BroadcastReceiver connectivityChangeReceiver;
 
   @Override
   public void onCreate(Bundle savedInstanceState) {
@@ -88,6 +87,13 @@ public class WebImageListActivity extends ListActivity implements WebImageView.L
     setListAdapter(listAdapter);
   }
 
+  @Override
+  protected void onResume() {
+    super.onResume();
+    connectivityChangeReceiver = new DownloadThreadPool.ConnectivityChangeReceiver();
+    registerReceiver(connectivityChangeReceiver, DownloadThreadPool.ConnectivityChangeReceiver.getIntentFilter());
+  }
+
   /**
    * If your activity plans on loading a lot of images, you should call WebImage.cancelAllRequests()
    * before going into the background. Otherwise, you risk wasting CPU time and bandwidth.
@@ -96,6 +102,7 @@ public class WebImageListActivity extends ListActivity implements WebImageView.L
   protected void onPause() {
     super.onPause();
     WebImage.cancelAllRequests();
+    unregisterReceiver(connectivityChangeReceiver);
   }
 
   @Override
