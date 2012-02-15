@@ -24,6 +24,7 @@ package com.wrapp.android.webimage;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Build;
@@ -43,6 +44,10 @@ public class DownloadThreadPool {
     @Override
     public void onReceive(Context context, Intent intent) {
       DownloadThreadPool.resizeThreadPool(context);
+    }
+
+    public static IntentFilter getIntentFilter() {
+      return new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
     }
   }
 
