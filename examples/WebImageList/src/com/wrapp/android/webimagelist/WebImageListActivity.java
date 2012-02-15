@@ -133,12 +133,7 @@ public class WebImageListActivity extends ListActivity implements WebImageView.L
         refresh();
         break;
       case R.id.MainMenuForceTimestampChecks:
-        if(ImageCache.getCacheRecheckAgeInMs() == 1) {
-          ImageCache.setCacheRecheckAgeInMs(defaultCacheRecheckAgeInMs);
-        }
-        else {
-          ImageCache.setCacheRecheckAgeInMs(1);
-        }
+        toggleForceTimestampChecks();
         break;
       case R.id.MainMenuShowMemoryUse:
         showMemoryUsageToast();
@@ -206,6 +201,21 @@ public class WebImageListActivity extends ListActivity implements WebImageView.L
     WebImage.cancelAllRequests();
     WebImage.clearOldCacheFiles(this, 0);
     final String toastMessage = "Restrict memory usage: " + (shouldRestrictMemoryUsage ? "enabled" : "disabled");
+    Toast toast = Toast.makeText(this, toastMessage, Toast.LENGTH_SHORT);
+    toast.show();
+    refresh();
+  }
+
+  private void toggleForceTimestampChecks() {
+    String toastMessage = "Force timestamp checks: ";
+    if(ImageCache.getCacheRecheckAgeInMs() == 1) {
+      ImageCache.setCacheRecheckAgeInMs(defaultCacheRecheckAgeInMs);
+      toastMessage += "disabled";
+    }
+    else {
+      ImageCache.setCacheRecheckAgeInMs(1);
+      toastMessage += "enabled";
+    }
     Toast toast = Toast.makeText(this, toastMessage, Toast.LENGTH_SHORT);
     toast.show();
     refresh();
