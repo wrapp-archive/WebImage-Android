@@ -60,7 +60,7 @@ public class CheckTimestampThread extends TaskQueueThread {
       LogWrapper.logMessage("Cached version of " + request.imageUrl.toString() + " found, but has expired.");
       cacheFile.delete();
       request.forceDownload = true;
-      DownloadThread.getInstance().addTask(request);
+      DownloadThreadPool.getInstance().addTask(request);
     }
     return null;
   }
