@@ -116,6 +116,10 @@ public class WebImage {
     LogWrapper.enableLogging(tag, level);
   }
 
+  public static void onNetworkChange(Context context) {
+    DownloadThreadPool.resizeThreadPool(context);
+  }
+
   /**
    * Stop all background threads. Call this when your activity quits.
    */
