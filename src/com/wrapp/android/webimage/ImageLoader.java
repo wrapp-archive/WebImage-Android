@@ -34,50 +34,50 @@ public class ImageLoader {
   private RequestRouterThread requestRouterThread;
   private FileLoaderThread fileLoaderThread;
   private CheckTimestampThread checkTimestampThread;
-  private DownloadThread downloadThread;
+  private DownloadThreadPool downloadThreadPool;
 
-  public static ImageLoader getInstance() {
+  public static ImageLoader getInstance(Context context) {
     if(staticInstance == null) {
-      staticInstance = new ImageLoader();
+      staticInstance = new ImageLoader(context);
     }
     return staticInstance;
   }
 
-  private ImageLoader() {
+  private ImageLoader(final Context context) {
     fileLoaderThread = FileLoaderThread.getInstance();
     fileLoaderThread.start();
     checkTimestampThread = CheckTimestampThread.getInstance();
     checkTimestampThread.start();
-    downloadThread = DownloadThread.getInstance();
-    downloadThread.start();
+    downloadThreadPool = DownloadThreadPool.getInstance();
+    downloadThreadPool.start(context);
     requestRouterThread = RequestRouterThread.getInstance();
     requestRouterThread.start();
   }
 
   public static void load(final Context context, URL imageUrl, ImageRequest.Listener listener, BitmapFactory.Options options) {
-    final ImageLoader instance = getInstance();
+    final ImageLoader instance = getInstance(context);
     instance.requestRouterThread.addTask(new ImageRequest(context, imageUrl, listener, options));
   }
 
   public static void cancelAllRequests() {
-    final ImageLoader imageLoader = getInstance();
+    final ImageLoader imageLoader = getInstance(null);
     imageLoader.requestRouterThread.cancelAllRequests();
     imageLoader.fileLoaderThread.cancelAllRequests();
     imageLoader.checkTimestampThread.cancelAllRequests();
-    imageLoader.downloadThread.cancelAllRequests();
+    imageLoader.downloadThreadPool.cancelAllRequests();
   }
 
   public static void shutdown() {
     LogWrapper.logMessage("Shutting down");
-    final ImageLoader imageLoader = getInstance();
+    final ImageLoader imageLoader = getInstance(null);
     imageLoader.requestRouterThread.shutdown();
     RequestRouterThread.staticInstance = null;
     imageLoader.fileLoaderThread.shutdown();
     FileLoaderThread.staticInstance = null;
     imageLoader.checkTimestampThread.shutdown();
     CheckTimestampThread.staticInstance = null;
-    imageLoader.downloadThread.shutdown();
-    DownloadThread.staticInstance = null;
+    imageLoader.downloadThreadPool.shutdown();
+    DownloadThreadPool.staticInstance = null;
     staticInstance = null;
   }
 }

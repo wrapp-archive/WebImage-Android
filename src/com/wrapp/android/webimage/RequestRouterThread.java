@@ -44,7 +44,7 @@ public class RequestRouterThread extends TaskQueueThread {
       FileLoaderThread.getInstance().addTask(request);
     }
     else {
-      DownloadThread.getInstance().addTask(request);
+      DownloadThreadPool.getInstance().addTask(request);
     }
 
     return null;
