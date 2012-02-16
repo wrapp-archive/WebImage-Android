@@ -112,6 +112,14 @@ public class WebImage {
     LogWrapper.enableLogging(tag, level);
   }
 
+  /**
+   * Set the maximum number of threads to be used for downloading images. The actual number of download
+   * threads varies depending on the phone's network connection. Smaller apps which only load a few
+   * images may want to set this value to 1.
+   * Note that this does not effect the total number of threads started by WebImage; there will still
+   * be other background threads for reading cached images, checking timestamps, etc.
+   * @param value Number of threads
+   */
   public static void setMaxDownloadThreads(int value) {
     DownloadThreadPool.setMaxThreads(value);
   }
@@ -126,12 +134,22 @@ public class WebImage {
     ImageLoader.cancelAllRequests();
   }
 
+  /**
+   * Call this method to manually force a resize check for the download thread pool size. Normally
+   * the preferred way of doing this is to instead use the BroadcastReceiver provided by the
+   * DownloadThreadPool class (see the example app for a demonstration of this).
+   * However, you may also wish to manually call this, for instance when your application is resumed
+   * and any network changes may not have been caught by your app.
+   * @param context Activity's context
+   */
   public static void onNetworkStatusChanged(Context context) {
     DownloadThreadPool.resizeThreadPool(context);
   }
 
   /**
-   * Stop all background threads. Call this when your activity quits.
+   * Stop all background threads. Call this when your application quits. Can also be called when
+   * the app is paused to free up additional resources. Note that the next request to load an
+   * image will re-inialize the thread pool.
    */
   public static void shutdown() {
     ImageLoader.shutdown();
