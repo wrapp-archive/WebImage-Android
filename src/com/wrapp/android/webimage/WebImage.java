@@ -26,11 +26,11 @@ import android.graphics.BitmapFactory;
 
 import java.net.URL;
 
-/**
- * Endpoint class for all main library tasks.
- */
+/** Endpoint class for all main library tasks. */
 @SuppressWarnings({"UnusedDeclaration"})
 public class WebImage {
+  // Loading Images ////////////////////////////////////////////////////////////////////////////////////////////////////
+
   /**
    * Load an image from URL to the given listener. This is a non-blocking call which is run in
    * a background thread. It is safe to call this method multiple times; duplicate requests will
@@ -57,6 +57,8 @@ public class WebImage {
     ImageLoader.load(context, imageUrl, listener, options);
   }
 
+  // Image Cache Operations ////////////////////////////////////////////////////////////////////////////////////////////
+
   /**
    * Check to see if an image has already been saved in the file cache. This can be useful when
    * you want to display an animation or other GUI notification in case the image has to be
@@ -67,14 +69,6 @@ public class WebImage {
    */
   public static boolean isImageCached(final Context context, URL imageUrl) {
     return ImageCache.isImageCached(context, ImageCache.getCacheKeyForUrl(imageUrl));
-  }
-
-  /**
-   * Cancel all pending requests. The parent activity should call this method when it is about
-   * to be stopped or paused, or else you will waste resources by running in the background.
-   */
-  public static void cancelAllRequests() {
-    ImageLoader.cancelAllRequests();
   }
 
   /**
@@ -105,6 +99,8 @@ public class WebImage {
     ImageCache.clearImageFromCaches(context, imageUrl);
   }
 
+  // Configuration /////////////////////////////////////////////////////////////////////////////////////////////////////
+
   /**
    * By default, the WebImage library is silent and will not produce any output to the console. During
    * debugging you may wish to call this method in your app's initialization method to see debugging
@@ -116,7 +112,21 @@ public class WebImage {
     LogWrapper.enableLogging(tag, level);
   }
 
-  public static void onNetworkChange(Context context) {
+  public static void setMaxDownloadThreads(int value) {
+    DownloadThreadPool.setMaxThreads(value);
+  }
+
+  // Thread Control Operations /////////////////////////////////////////////////////////////////////////////////////////
+
+  /**
+   * Cancel all pending requests. The parent activity should call this method when it is about
+   * to be stopped or paused, or else you will waste resources by running in the background.
+   */
+  public static void cancelAllRequests() {
+    ImageLoader.cancelAllRequests();
+  }
+
+  public static void onNetworkStatusChanged(Context context) {
     DownloadThreadPool.resizeThreadPool(context);
   }
 
