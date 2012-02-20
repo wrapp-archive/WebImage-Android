@@ -66,9 +66,9 @@ public class WebImageListActivity extends ListActivity implements WebImageView.L
     requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
     setContentView(R.layout.web_image_activity);
 
-    // Remove all images from the cache when starting up. Real apps probably should call this
-    // method with a non-zero argument (in seconds), or without any argument to use the default
-    // value.
+    // Remove all images from the cache when starting up
+    WebImage.clearOldCacheFiles(this);
+    // Calling the above method with an extra argument of 0 will force all images to be removed from the cache
     // WebImage.clearOldCacheFiles(this, 0);
 
     // Turn on logging so we can see what is going on.
