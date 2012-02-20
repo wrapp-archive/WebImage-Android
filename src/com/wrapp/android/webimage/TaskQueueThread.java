@@ -57,7 +57,7 @@ public abstract class TaskQueueThread extends Thread {
         request = getNextRequest(pendingRequests);
       }
 
-      if(request != null) {
+      if(request != null && request.listener != null) {
         try {
           Bitmap bitmap = processRequest(request);
           if(pruneDuplicateRequests(request, pendingRequests)) {
