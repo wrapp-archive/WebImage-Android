@@ -62,7 +62,7 @@ public abstract class TaskQueueThread extends Thread {
       if(request != null && request.listener != null) {
         try {
           Bitmap bitmap = processRequest(request);
-          if(pruneDuplicateRequests(request, pendingRequests)) {
+          if(isRequestStillValid(request, pendingRequests)) {
             if(bitmap != null) {
               onRequestComplete(new RequestResponse(bitmap, request));
             }
@@ -123,7 +123,7 @@ public abstract class TaskQueueThread extends Thread {
     return request;
   }
 
-  private boolean pruneDuplicateRequests(ImageRequest finishedRequest, Queue<ImageRequest> requestQueue) {
+  private boolean isRequestStillValid(ImageRequest finishedRequest, Queue<ImageRequest> requestQueue) {
     for(ImageRequest checkRequest : requestQueue) {
       if(finishedRequest.listener.equals(checkRequest.listener) &&
         !finishedRequest.imageUrl.equals(checkRequest.imageUrl)) {
