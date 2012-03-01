@@ -64,14 +64,12 @@ public abstract class TaskQueueThread extends Thread {
           Bitmap bitmap = processRequest(request);
           if(pruneDuplicateRequests(request, pendingRequests)) {
             if(bitmap != null) {
-              request.listener.onBitmapLoaded(new RequestResponse(bitmap, request.imageUrl));
-            }
-            else {
-              request.listener.onBitmapLoadCancelled();
+              onRequestComplete(new RequestResponse(bitmap, request));
             }
           }
           else {
-            request.listener.onBitmapLoadCancelled();
+            LogWrapper.logMessage("Bitmap request is no longer valid: " + request.imageUrl);
+            onRequestCancelled(request);
           }
         }
         catch(Exception e) {
