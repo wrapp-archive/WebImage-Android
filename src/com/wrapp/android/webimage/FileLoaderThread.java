@@ -83,4 +83,14 @@ public class FileLoaderThread extends TaskQueueThread {
 
     return bitmap;
   }
+
+  @Override
+  protected void onRequestComplete(RequestResponse response) {
+    response.originalRequest.listener.onBitmapLoaded(response);
+  }
+
+  @Override
+  protected void onRequestCancelled(ImageRequest request) {
+    request.listener.onBitmapLoadCancelled();
+  }
 }

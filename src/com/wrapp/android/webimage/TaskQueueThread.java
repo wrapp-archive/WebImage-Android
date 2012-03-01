@@ -31,6 +31,8 @@ public abstract class TaskQueueThread extends Thread {
   private boolean isRunning;
 
   protected abstract Bitmap processRequest(ImageRequest request);
+  protected abstract void onRequestComplete(RequestResponse response);
+  protected abstract void onRequestCancelled(ImageRequest request);
 
   public TaskQueueThread(final String taskName) {
     super(taskName);

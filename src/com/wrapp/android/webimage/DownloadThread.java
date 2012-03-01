@@ -39,4 +39,14 @@ public class DownloadThread extends TaskQueueThread {
     }
     return null;
   }
+
+  @Override
+  protected void onRequestComplete(RequestResponse response) {
+    // Never reached
+  }
+
+  @Override
+  protected void onRequestCancelled(ImageRequest request) {
+    // Nothing to do
+  }
 }

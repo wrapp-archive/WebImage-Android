@@ -62,6 +62,17 @@ public class CheckTimestampThread extends TaskQueueThread {
       request.forceDownload = true;
       DownloadThreadPool.getInstance().addTask(request);
     }
+
     return null;
+  }
+
+  @Override
+  protected void onRequestComplete(RequestResponse response) {
+    // Never reached
+  }
+
+  @Override
+  protected void onRequestCancelled(ImageRequest request) {
+    // Nothing to do
   }
 }
