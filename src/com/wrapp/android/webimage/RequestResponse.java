@@ -23,14 +23,14 @@ package com.wrapp.android.webimage;
 
 import android.graphics.Bitmap;
 
-import java.net.URL;
+import java.lang.ref.WeakReference;
 
 public class RequestResponse {
-  public Bitmap bitmap;
-  public URL imageUrl;
+  public WeakReference<Bitmap> bitmapReference;
+  public ImageRequest originalRequest;
 
-  public RequestResponse(Bitmap bitmap, URL imageUrl) {
-    this.bitmap = bitmap;
-    this.imageUrl = imageUrl;
+  public RequestResponse(Bitmap bitmap, ImageRequest originalRequest) {
+    this.bitmapReference = new WeakReference<Bitmap>(bitmap);
+    this.originalRequest = originalRequest;
   }
 }
