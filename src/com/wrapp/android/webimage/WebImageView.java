@@ -22,6 +22,7 @@
 package com.wrapp.android.webimage;
 
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.drawable.Drawable;
 import android.os.Handler;
@@ -163,10 +164,17 @@ public class WebImageView extends ImageView implements ImageRequest.Listener {
    */
   public void onBitmapLoaded(final RequestResponse response) {
     currentState = States.LOADED;
-    if(response.imageUrl.equals(currentImageUrl)) {
+    if(response.originalRequest.imageUrl.equals(currentImageUrl)) {
       postToGuiThread(new Runnable() {
         public void run() {
-          setImageBitmap(response.bitmap);
+          final Bitmap bitmap = response.bitmapReference.get();
+          if(bitmap != null) {
+            setImageBitmap(bitmap);
+          }
+          else {
+            // The garbage collecter has cleaned up this bitmap by now (yes, that does happen), so re-issue the request
+            ImageLoader.load(getContext(), response.originalRequest.imageUrl, response.originalRequest.listener, response.originalRequest.loadOptions);
+          }
         }
       });
       if(listener != null) {
