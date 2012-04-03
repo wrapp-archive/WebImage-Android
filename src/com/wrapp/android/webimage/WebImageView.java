@@ -52,6 +52,8 @@ public class WebImageView extends ImageView implements ImageRequest.Listener {
     EMPTY,
     LOADING,
     LOADED,
+    RELOADING,
+    CANCELLED,
     ERROR,
   }
   private States currentState = States.EMPTY;
@@ -164,13 +166,13 @@ public class WebImageView extends ImageView implements ImageRequest.Listener {
    * @param response Request response
    */
   public void onBitmapLoaded(final RequestResponse response) {
-    currentState = States.LOADED;
     if(response.originalRequest.imageUrl.equals(pendingImageUrl)) {
       postToGuiThread(new Runnable() {
         public void run() {
           final Bitmap bitmap = response.bitmapReference.get();
           if(bitmap != null) {
             setImageBitmap(bitmap);
+            currentState = States.LOADED;
             loadedImageUrl = response.originalRequest.imageUrl;
             pendingImageUrl = null;
             if(listener != null) {
@@ -180,6 +182,7 @@ public class WebImageView extends ImageView implements ImageRequest.Listener {
           else {
             // The garbage collecter has cleaned up this bitmap by now (yes, that does happen), so re-issue the request
             ImageLoader.load(getContext(), response.originalRequest.imageUrl, response.originalRequest.listener, response.originalRequest.loadOptions);
+            currentState = States.RELOADING;
           }
         }
       });
@@ -188,6 +191,7 @@ public class WebImageView extends ImageView implements ImageRequest.Listener {
       if(listener != null) {
         listener.onImageLoadCancelled();
       }
+      currentState = States.CANCELLED;
     }
   }
 
@@ -229,6 +233,7 @@ public class WebImageView extends ImageView implements ImageRequest.Listener {
    * reason it is recommended not to do so much work in this method.
    */
   public void onBitmapLoadCancelled() {
+    currentState = States.CANCELLED;
     if(listener != null) {
       listener.onImageLoadCancelled();
     }
