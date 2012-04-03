@@ -45,7 +45,8 @@ public class WebImageView extends ImageView implements ImageRequest.Listener {
   private int errorImageResId;
   private Drawable placeholderImage;
   private int placeholderImageResId;
-  private URL currentImageUrl;
+  private URL loadedImageUrl;
+  private URL pendingImageUrl;
 
   private enum States {
     EMPTY,
@@ -129,7 +130,7 @@ public class WebImageView extends ImageView implements ImageRequest.Listener {
     if(imageUrl == null) {
       return;
     }
-    else if(imageUrl.equals(currentImageUrl) && currentState == States.LOADED) {
+    else if(currentState == States.LOADED && imageUrl.equals(loadedImageUrl)) {
       return;
     }
 
@@ -147,7 +148,7 @@ public class WebImageView extends ImageView implements ImageRequest.Listener {
     if(this.listener != null) {
       listener.onImageLoadStarted();
     }
-    currentImageUrl = imageUrl;
+    pendingImageUrl = imageUrl;
     ImageLoader.load(getContext(), imageUrl, this, options);
   }
 
@@ -164,12 +165,17 @@ public class WebImageView extends ImageView implements ImageRequest.Listener {
    */
   public void onBitmapLoaded(final RequestResponse response) {
     currentState = States.LOADED;
-    if(response.originalRequest.imageUrl.equals(currentImageUrl)) {
+    if(response.originalRequest.imageUrl.equals(pendingImageUrl)) {
       postToGuiThread(new Runnable() {
         public void run() {
           final Bitmap bitmap = response.bitmapReference.get();
           if(bitmap != null) {
             setImageBitmap(bitmap);
+            loadedImageUrl = response.originalRequest.imageUrl;
+            pendingImageUrl = null;
+            if(listener != null) {
+              listener.onImageLoadComplete();
+            }
           }
           else {
             // The garbage collecter has cleaned up this bitmap by now (yes, that does happen), so re-issue the request
@@ -177,9 +183,6 @@ public class WebImageView extends ImageView implements ImageRequest.Listener {
           }
         }
       });
-      if(listener != null) {
-        listener.onImageLoadComplete();
-      }
     }
     else {
       if(listener != null) {
@@ -216,7 +219,7 @@ public class WebImageView extends ImageView implements ImageRequest.Listener {
   protected void onWindowVisibilityChanged(int visibility) {
     super.onWindowVisibilityChanged(visibility);
     if(visibility == VISIBLE && currentState == States.LOADING) {
-      setImageUrl(currentImageUrl);
+      setImageUrl(loadedImageUrl);
     }
   }
 
