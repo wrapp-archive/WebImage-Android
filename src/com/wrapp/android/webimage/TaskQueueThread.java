@@ -56,25 +56,37 @@ public abstract class TaskQueueThread extends Thread {
           }
         }
 
-        request = getNextRequest(pendingRequests);
-      }
-
-      if(request != null && request.listener != null) {
         try {
-          Bitmap bitmap = processRequest(request);
-          if(isRequestStillValid(request, pendingRequests)) {
-            if(bitmap != null) {
-              onRequestComplete(new RequestResponse(bitmap, request));
-            }
-          }
-          else {
-            LogWrapper.logMessage("Bitmap request is no longer valid: " + request.imageUrl);
-            onRequestCancelled(request);
-          }
+          request = getNextRequest(pendingRequests);
         }
         catch(Exception e) {
-          request.listener.onBitmapLoadError(e.getMessage());
+          continue;
         }
+      }
+
+      try {
+        if(request != null && request.listener != null) {
+          try {
+            Bitmap bitmap = processRequest(request);
+            synchronized(pendingRequests) {
+              if(isRequestStillValid(request, pendingRequests)) {
+                if(bitmap != null) {
+                  onRequestComplete(new RequestResponse(bitmap, request));
+                }
+              }
+              else {
+                LogWrapper.logMessage("Bitmap request is no longer valid: " + request.imageUrl);
+                onRequestCancelled(request);
+              }
+            }
+          }
+          catch(Exception e) {
+            request.listener.onBitmapLoadError(e.getMessage());
+          }
+        }
+      }
+      catch(Exception e) {
+        LogWrapper.logException(e);
       }
     }
 
