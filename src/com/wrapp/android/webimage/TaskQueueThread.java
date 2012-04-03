@@ -109,6 +109,9 @@ public abstract class TaskQueueThread extends Thread {
   private ImageRequest getNextRequest(Queue<ImageRequest> requestQueue) {
     // Pop the first element from the pending request queue
     ImageRequest request = requestQueue.poll();
+    if(request.listener == null) {
+      return request;
+    }
 
     // Go through the list of pending requests, pruning duplicate requests and using the latest URL
     // requested by a particular listener. It is quite common that a listener will request multiple
