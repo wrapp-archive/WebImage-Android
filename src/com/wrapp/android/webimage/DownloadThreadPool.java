@@ -37,7 +37,7 @@ public class DownloadThreadPool {
   private static final int DEFAULT_MAX_THREADS = 4;
 
   static DownloadThreadPool staticInstance;
-  private static int numThreads = DEFAULT_MAX_THREADS;
+  private static int maxThreads = DEFAULT_MAX_THREADS;
   private DownloadThread[] downloadThreads;
   private int numActiveThreads = 0;
   private int currentThread = 0;
@@ -61,12 +61,12 @@ public class DownloadThreadPool {
   }
 
   public static void setMaxThreads(int value) {
-    numThreads = value;
+    maxThreads = value;
   }
 
   private DownloadThreadPool() {
-    downloadThreads = new DownloadThread[numThreads];
-    for(int i = 0; i < numThreads; i++) {
+    downloadThreads = new DownloadThread[maxThreads];
+    for(int i = 0; i < maxThreads; i++) {
       downloadThreads[i] = new DownloadThread();
     }
   }
@@ -88,7 +88,7 @@ public class DownloadThreadPool {
   }
 
   public void start(Context context) {
-    for(int i = 0; i < numThreads; i++) {
+    for(int i = 0; i < maxThreads; i++) {
       downloadThreads[i].start();
     }
     numActiveThreads = getBestThreadPoolSize(context);
@@ -123,7 +123,7 @@ public class DownloadThreadPool {
             // Connection subtype will return integer respective for 1G, 2G, 3G
             // For 3G connections and better, we should use up to half the max pool size.
             if(networkInfo.getSubtype() >= 3) {
-              return numThreads / 2;
+              return maxThreads / 2;
             }
             // For all other cases, just use one thread. EDGE/2G is slow pretty much everywhere.
             else {
@@ -131,10 +131,10 @@ public class DownloadThreadPool {
             }
           // For WIFI, use the entire available thread pool
           case CONNECTION_TYPE_WIFI:
-            return numThreads;
+            return maxThreads;
           // Yeah, this looks weird, but there are Android devices which support this (like Android-x86).
           case CONNECTION_TYPE_ETHERNET:
-            return numThreads;
+            return maxThreads;
         }
       }
     }
@@ -150,13 +150,13 @@ public class DownloadThreadPool {
   }
 
   public void cancelAllRequests() {
-    for(int i = 0; i < numThreads; i++) {
+    for(int i = 0; i < maxThreads; i++) {
       downloadThreads[i].cancelAllRequests();
     }
   }
 
   public void shutdown() {
-    for(int i = 0; i < numThreads; i++) {
+    for(int i = 0; i < maxThreads; i++) {
       downloadThreads[i].shutdown();
     }
   }
