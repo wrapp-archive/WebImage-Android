@@ -33,6 +33,7 @@ public class DownloadThreadPool {
   // These don't seem to be declared in the Android SDK. Or did I just not look hard enough?
   private static final int CONNECTION_TYPE_MOBILE = 0;
   private static final int CONNECTION_TYPE_WIFI = 1;
+  private static final int CONNECTION_TYPE_ETHERNET = 9;
   private static final int DEFAULT_MAX_THREADS = 4;
 
   static DownloadThreadPool staticInstance;
@@ -130,6 +131,9 @@ public class DownloadThreadPool {
             }
           // For WIFI, use the entire available thread pool
           case CONNECTION_TYPE_WIFI:
+            return numThreads;
+          // Yeah, this looks weird, but there are Android devices which support this (like Android-x86).
+          case CONNECTION_TYPE_ETHERNET:
             return numThreads;
         }
       }
