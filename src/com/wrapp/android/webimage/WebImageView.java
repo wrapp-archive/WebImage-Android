@@ -135,6 +135,9 @@ public class WebImageView extends ImageView implements ImageRequest.Listener {
     else if(currentState == States.LOADED && imageUrl.equals(loadedImageUrl)) {
       return;
     }
+    else if(currentState == States.LOADING && imageUrl.equals(pendingImageUrl)) {
+      return;
+    }
 
     currentState = States.LOADING;
     this.errorImageResId = errorImageResId;
