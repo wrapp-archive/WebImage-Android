@@ -226,7 +226,7 @@ public class WebImageView extends ImageView implements ImageRequest.Listener {
   protected void onWindowVisibilityChanged(int visibility) {
     super.onWindowVisibilityChanged(visibility);
     if(visibility == VISIBLE && currentState == States.LOADING) {
-      setImageUrl(loadedImageUrl);
+      setImageUrl(pendingImageUrl);
     }
   }
 
