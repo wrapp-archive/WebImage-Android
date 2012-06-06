@@ -114,7 +114,11 @@ public class ImageLoader {
     if (task != null && !task.url.equals(request.imageUrl)) {
       // Listener is pending with another url, cancel it
       LogWrapper.logMessage("Already pending, old: " + task.url + ", new: " + request.imageUrl);
-      task.future.cancel(false);
+      if (task.future.cancel(false)) {
+        // Notify listener if we managed to cancel it, otherwise it
+        // will be notified in the callback
+        request.listener.onBitmapLoadCancelled();
+      }
       
       pending.remove(listener);
     } else if (task != null && task.url.equals(request.imageUrl)) {
@@ -152,6 +156,7 @@ public class ImageLoader {
     public void onComplete(ImageRequest request) {
       if (!requestValid(request)) {
         // The listener wants something else, ignore
+        request.listener.onBitmapLoadCancelled();
         LogWrapper.logMessage("Request no longer pending, dropping: " + request.imageUrl);
         return;
       }
