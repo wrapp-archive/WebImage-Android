@@ -93,7 +93,7 @@ public class AdaptingThreadPoolExecutor extends ThreadPoolExecutor {
   private class ConnectivityChangeReceiver extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {
-      DownloadThreadPool.resizeThreadPool(context);
+      resizeThreadPool();
     }
   }
 }
