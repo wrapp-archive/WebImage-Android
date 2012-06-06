@@ -21,10 +21,11 @@
 
 package com.wrapp.android.webimage;
 
-import android.content.Context;
-import android.graphics.BitmapFactory;
-
 import java.net.URL;
+
+import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 
 public final class ImageRequest {
   public Context context;
@@ -35,7 +36,7 @@ public final class ImageRequest {
   public boolean forceDownload = false;
 
   public interface Listener {
-    public void onBitmapLoaded(final RequestResponse requestResponse);
+    public void onBitmapLoaded(ImageRequest request, Bitmap bitmap);
     public void onBitmapLoadError(String message);
     public void onBitmapLoadCancelled();
   }

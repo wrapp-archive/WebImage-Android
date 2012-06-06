@@ -168,32 +168,26 @@ public class WebImageView extends ImageView implements ImageRequest.Listener {
    *
    * @param response Request response
    */
-  public void onBitmapLoaded(final RequestResponse response) {
-    if(response.originalRequest.imageUrl.equals(pendingImageUrl)) {
+  public void onBitmapLoaded(final ImageRequest request, final Bitmap bitmap) {
+    if(request.imageUrl.equals(pendingImageUrl)) {
       LogWrapper.logMessage("WebImageView settinge image: " + pendingImageUrl);
       
       postToGuiThread(new Runnable() {
         public void run() {
-          final Bitmap bitmap = response.bitmapReference.get();
           if(bitmap != null) {
             setImageBitmap(bitmap);
             currentState = States.LOADED;
-            loadedImageUrl = response.originalRequest.imageUrl;
+            loadedImageUrl = request.imageUrl;
             pendingImageUrl = null;
             if(listener != null) {
               listener.onImageLoadComplete();
             }
           }
-          else {
-            // The garbage collecter has cleaned up this bitmap by now (yes, that does happen), so re-issue the request
-            ImageLoader.load(getContext(), response.originalRequest.imageUrl, response.originalRequest.listener, response.originalRequest.loadOptions);
-            currentState = States.RELOADING;
-          }
         }
       });
     }
     else {
-      LogWrapper.logMessage("WebImageView dropping image: " + response.originalRequest.imageUrl + ", waiting for: " + pendingImageUrl
+      LogWrapper.logMessage("WebImageView dropping image: " + request.imageUrl + ", waiting for: " + pendingImageUrl
           + " and having state " + currentState);
       
       if(listener != null) {

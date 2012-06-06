@@ -159,7 +159,7 @@ public class ImageLoader {
 
         if (b != null) {
           // Image was fetched from disk
-          request.listener.onBitmapLoaded(new RequestResponse(b, request));
+          request.listener.onBitmapLoaded(request, b);
           pending.remove(request.listener);
         } else {
           // Image was downloaded to disk, fetch it
