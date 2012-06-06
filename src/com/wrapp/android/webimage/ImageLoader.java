@@ -59,8 +59,21 @@ public class ImageLoader {
     getInstance(null).shutdownInternal();
   }
   
+  void checkTimeStamp(ImageRequest request) {
+    checkTimestamp.submit(new CheckTimeStampTask(request));
+  }
+  
+  void forceUpdateImage(URL url, BitmapFactory.Options options) {
+    // TODO: Actually let this update the view
+    ImageRequest request = new ImageRequest(context, url, null, options);
+    request.forceDownload = true;
+    
+    download.submit(new DownloadTask(request));
+  }
+  
   private void createExecutors() {
     fileLoader = Executors.newSingleThreadExecutor(new PriorityThreadFactory(Thread.NORM_PRIORITY - 1));
+    checkTimestamp = Executors.newSingleThreadExecutor(new PriorityThreadFactory(Thread.MIN_PRIORITY));
     download = new AdaptingThreadPoolExecutor(context);
   }
   
@@ -76,6 +89,7 @@ public class ImageLoader {
     LogWrapper.logMessage("Shutting down");
     try {
       download.shutdownNow();
+      checkTimestamp.shutdownNow();
       fileLoader.shutdownNow();
       
       pending.clear();

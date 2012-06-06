@@ -37,7 +37,7 @@ public class FileLoadTask implements Callable<Bitmap> {
         Date now = new Date();
         long fileAgeInMs = now.getTime() - cacheFile.lastModified();
         if(fileAgeInMs > ImageCache.getCacheRecheckAgeInMs()) {
-          CheckTimestampThread.getInstance().addTask(request);
+          ImageLoader.getInstance(request.context).checkTimeStamp(request);
         }
 
         LogWrapper.logMessage("Loading image " + request.imageUrl + " from file cache");
