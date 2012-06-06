@@ -1,23 +1,26 @@
 package com.wrapp.android.webimage;
 
-import com.wrapp.android.webimage.ImageLoader.DownloadListener;
+import java.io.IOException;
+import java.util.concurrent.Callable;
 
-public class DownloadTask implements Runnable {
-  private DownloadListener listener;
+import android.graphics.Bitmap;
 
+public class DownloadTask implements Callable<Bitmap> {
   private ImageRequest request;
 
-  public DownloadTask(ImageRequest request, DownloadListener listener) {
+  public DownloadTask(ImageRequest request) {
     this.request = request;
-    this.listener = listener;
   }
-
+  
   @Override
-  public void run() {
+  public Bitmap call() throws Exception {
     if (ImageCache.isImageCached(request.context, request.imageKey) && !request.forceDownload) {
-      listener.onComplete(request);
+      return null;
     } else if (ImageDownloader.loadImage(request.context, request.imageKey, request.imageUrl)) {
-      listener.onComplete(request);
+      return null;
+    } else {
+      // Image was neither cached nor did we manage to download it
+      throw new IOException("Could not download image");
     }
   }
 }

@@ -3,14 +3,17 @@ package com.wrapp.android.webimage;
 import java.net.URL;
 import java.util.Map;
 import java.util.WeakHashMap;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Handler;
+import android.util.Log;
 
 public class ImageLoader {
   private static final long SHUTDOWN_TIMEOUT_IN_MS = 100;
@@ -109,13 +112,15 @@ public class ImageLoader {
   }
   
   private void loadFromDisk(ImageRequest request) {
-    Future<?> future = fileLoader.submit(new FileLoadTask(request, fileLoadListener));
-    pending.put(request.listener, new PendingTask(request.imageUrl, future));
+    CallbackTask task = new CallbackTask(new FileLoadTask(request), request, completionListener, handler);
+    fileLoader.submit(task);
+    pending.put(request.listener, new PendingTask(request.imageUrl, task));
   }
   
   private void loadFromUrl(ImageRequest request) {
-    Future<?> future = download.submit(new DownloadTask(request, downloadListener));
-    pending.put(request.listener, new PendingTask(request.imageUrl, future));
+    CallbackTask task = new CallbackTask(new DownloadTask(request), request, completionListener, handler);
+    download.submit(task);
+    pending.put(request.listener, new PendingTask(request.imageUrl, task));
   }
   
   private boolean requestValid(ImageRequest request) {
@@ -124,48 +129,47 @@ public class ImageLoader {
     return task != null && task.url.equals(request.imageUrl);
   }
   
-  public interface FileLoadListener {
-    void onComplete(RequestResponse response);
-  }
-  
-  public interface DownloadListener {
-    void onComplete(ImageRequest request);
-  }
-  
-  private FileLoadListener fileLoadListener = new FileLoadListener() {
-    @Override
-    public void onComplete(RequestResponse response) {
-      ImageRequest request = response.originalRequest;
-      
-      // Are we still pending?
-      if (requestValid(request)) {
-        request.listener.onBitmapLoaded(response);
-        pending.remove(request.listener);
-      } else {
-        // The listener wants something else, ignore
-        LogWrapper.logMessage("Request no longer pending, dropping: " + request.imageUrl);
-      }
-    }
-  };
-  
-  private DownloadListener downloadListener = new DownloadListener() {
+  private CallbackTask.Listener completionListener = new CallbackTask.Listener() {
     @Override
     public void onComplete(ImageRequest request) {
-      // Are we still pending?
-      if (requestValid(request)) {
-        loadFromDisk(request);
-      } else {
+      if (!requestValid(request)) {
         // The listener wants something else, ignore
         LogWrapper.logMessage("Request no longer pending, dropping: " + request.imageUrl);
+        return;
+      }
+      
+      PendingTask task = pending.get(request.listener);
+
+      try {
+        Bitmap b = task.future.get();
+
+        if (b != null) {
+          // Image was fetched from disk
+          request.listener.onBitmapLoaded(new RequestResponse(b, request));
+          pending.remove(request.listener);
+        } else {
+          // Image was downloaded to disk, fetch it
+          loadFromDisk(request);
+        }
+      } catch (ExecutionException e) {
+        // Request failed for some reason
+        Throwable original = e.getCause();
+        Log.e("WebImage", "Failed to fetch image", original);
+
+        request.listener.onBitmapLoadError(original.getMessage());
+        pending.remove(request.listener);
+      } catch (InterruptedException e) {
+        // In case we get interrupted while getting the value,
+        // shouldn't be able to happen as we only call it after completion
       }
     }
   };
 
   private static class PendingTask {
     public URL url;
-    public Future<?> future;
+    public Future<Bitmap> future;
     
-    public PendingTask(URL url, Future<?> future) {
+    public PendingTask(URL url, Future<Bitmap> future) {
       this.url = url;
       this.future = future;
     }

@@ -4,33 +4,26 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Date;
-
-import com.wrapp.android.webimage.ImageLoader.FileLoadListener;
+import java.util.concurrent.Callable;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 
-public class FileLoadTask implements Runnable {
-  private FileLoadListener listener;
-  
+public class FileLoadTask implements Callable<Bitmap> {
   private ImageRequest request;
   
-  public FileLoadTask(ImageRequest request, FileLoadListener listener) {
-    this.listener = listener;
+  public FileLoadTask(ImageRequest request) {
     this.request = request;
   }
 
   @Override
-  public void run() {
-    Bitmap bitmap = loadBitmap();
+  public Bitmap call() throws Exception {
+    Bitmap b = loadBitmap();
     
-   if (bitmap != null) {
-      // This should probably be called on UI thread here instead
-      RequestResponse response = new RequestResponse(bitmap, request);
-      listener.onComplete(response);
+    if (b != null) {
+      return b;
     } else {
-      // Nothing
-      LogWrapper.logMessage("FileLoadTask: No bitmap :(");
+      throw new IOException("Could not load bitmap from disk");
     }
   }
   
