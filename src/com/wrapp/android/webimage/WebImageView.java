@@ -170,6 +170,8 @@ public class WebImageView extends ImageView implements ImageRequest.Listener {
    */
   public void onBitmapLoaded(final RequestResponse response) {
     if(response.originalRequest.imageUrl.equals(pendingImageUrl)) {
+      LogWrapper.logMessage("WebImageView settinge image: " + pendingImageUrl);
+      
       postToGuiThread(new Runnable() {
         public void run() {
           final Bitmap bitmap = response.bitmapReference.get();
@@ -191,6 +193,9 @@ public class WebImageView extends ImageView implements ImageRequest.Listener {
       });
     }
     else {
+      LogWrapper.logMessage("WebImageView dropping image: " + response.originalRequest.imageUrl + ", waiting for: " + pendingImageUrl
+          + " and having state " + currentState);
+      
       if(listener != null) {
         listener.onImageLoadCancelled();
       }
