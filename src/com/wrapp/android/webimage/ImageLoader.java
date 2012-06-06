@@ -26,7 +26,7 @@ public class ImageLoader {
   // Worker threads for different tasks, ordered from fast -> slow
   private ExecutorService fileLoader;
   private ExecutorService checkTimestamp;
-  private ExecutorService download;
+  private AdaptingThreadPoolExecutor download;
   
   private WeakHashMap<ImageRequest.Listener, PendingTask> pending;
 
@@ -57,6 +57,10 @@ public class ImageLoader {
 
   public static void shutdown() {
     getInstance(null).shutdownInternal();
+  }
+  
+  AdaptingThreadPoolExecutor getDownloadExecutor() {
+    return download;
   }
   
   void checkTimeStamp(ImageRequest request) {

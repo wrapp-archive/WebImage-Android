@@ -12,11 +12,19 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Build;
 
-public class AdaptingThreadPoolExecutor extends ThreadPoolExecutor {
+class AdaptingThreadPoolExecutor extends ThreadPoolExecutor {
   private static final int DEFAULT_MAX_THREADS = 4;
   
   private Context context;
   private ConnectivityChangeReceiver connectivityReceiver;
+  
+  private static int maxThreads = DEFAULT_MAX_THREADS;
+  
+  static void setMaxThreads(int value) {
+    // This is pretty hackish but has to be done to fit the
+    // current interface of WebImage.
+    maxThreads = value;
+  }
 
   public AdaptingThreadPoolExecutor(Context context) {
     super(DEFAULT_MAX_THREADS, DEFAULT_MAX_THREADS, 0L, TimeUnit.MILLISECONDS,
@@ -36,8 +44,8 @@ public class AdaptingThreadPoolExecutor extends ThreadPoolExecutor {
     
     context.unregisterReceiver(connectivityReceiver);
   }
-  
-  private void resizeThreadPool() {
+
+  public void resizeThreadPool() {
     int bestSize = getBestThreadPoolSize();
     
     LogWrapper.logMessage("Using " + bestSize + " threads for download");
@@ -64,7 +72,7 @@ public class AdaptingThreadPoolExecutor extends ThreadPoolExecutor {
             // Connection subtype will return integer respective for 1G, 2G, 3G
             // For 3G connections and better, we should use up to half the max pool size.
             if(networkInfo.getSubtype() >= 3) {
-              return DEFAULT_MAX_THREADS / 2;
+              return maxThreads / 2;
             }
             // For all other cases, just use one thread. EDGE/2G is slow pretty much everywhere.
             else {
@@ -72,10 +80,10 @@ public class AdaptingThreadPoolExecutor extends ThreadPoolExecutor {
             }
           // For WIFI, use the entire available thread pool
           case ConnectivityManager.TYPE_WIFI:
-            return DEFAULT_MAX_THREADS;
+            return maxThreads;
           // Yeah, this looks weird, but there are Android devices which support this (like Android-x86).
           case ConnectivityManager.TYPE_ETHERNET:
-            return DEFAULT_MAX_THREADS;
+            return maxThreads;
         }
       }
     }

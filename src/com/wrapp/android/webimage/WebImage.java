@@ -121,7 +121,7 @@ public class WebImage {
    * @param value Number of threads
    */
   public static void setMaxDownloadThreads(int value) {
-    DownloadThreadPool.setMaxThreads(value);
+    AdaptingThreadPoolExecutor.setMaxThreads(value);
   }
 
   // Thread Control Operations /////////////////////////////////////////////////////////////////////////////////////////
@@ -143,7 +143,7 @@ public class WebImage {
    * @param context Activity's context
    */
   public static void onNetworkStatusChanged(Context context) {
-    DownloadThreadPool.resizeThreadPool(context);
+    ImageLoader.getInstance(context).getDownloadExecutor().resizeThreadPool();
   }
 
   /**
