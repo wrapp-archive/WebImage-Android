@@ -132,14 +132,24 @@ public class ImageLoader {
      }
     }
     
-    CallbackTask task;
-    if (ImageCache.isImageCached(context, request.imageKey)) {
-      task = loadFromDisk(request);
+    PendingTask pendingTask = pendingTasks.get(request);
+    if (pendingTask == null) {
+      // No other listeners are pending for this request, create it
+      CallbackTask task;
+      if (ImageCache.isImageCached(context, request.imageKey)) {
+        task = loadFromDisk(request);
+      } else {
+        task = loadFromUrl(request);
+      }
+      
+      pendingTask = new PendingTask(task);
+      pendingTasks.put(request, pendingTask);
     } else {
-      task = loadFromUrl(request);
+      LogWrapper.logMessage("Reusing existing request: " + request.imageUrl);
     }
     
-    addTask(request, listener, task);
+    pendingTask.addListener(listener);
+    pendingListeners.put(listener, request);
   }
   
   private CallbackTask loadFromDisk(ImageRequest request) {
@@ -154,21 +164,6 @@ public class ImageLoader {
     download.submit(task);
     
     return task;
-  }
-  
-  private void addTask(ImageRequest request, ImageRequest.Listener listener, CallbackTask task) {
-    pendingListeners.put(listener, request);
-    
-    PendingTask pendingTask = pendingTasks.get(request);
-    if (pendingTask == null) {
-      // No other listeners are pending for this request, create it
-      pendingTask = new PendingTask(task);
-      pendingTasks.put(request, pendingTask);
-    } else {
-      LogWrapper.logMessage("Reusing existing request");
-    }
-    
-    pendingTask.addListener(listener);
   }
 
   private CallbackTask.Listener completionListener = new CallbackTask.Listener() {
