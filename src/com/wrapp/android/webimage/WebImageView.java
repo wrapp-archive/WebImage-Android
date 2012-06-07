@@ -21,23 +21,21 @@
 
 package com.wrapp.android.webimage;
 
+import java.net.MalformedURLException;
+import java.net.URL;
+
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.drawable.Drawable;
-import android.os.Handler;
 import android.util.AttributeSet;
 import android.widget.ImageView;
-
-import java.net.MalformedURLException;
-import java.net.URL;
 
 /**
  * ImageView successor class which can load images asynchronously from the web. This class
  * is safe to use in ListAdapters or views which may trigger many simultaneous requests.
  */
 public class WebImageView extends ImageView implements ImageRequest.Listener {
-  Handler uiHandler;
   private Listener listener;
   // Save both a Drawable and int here. If the user wants to pass a resource ID, we can load
   // this lazily and save a bit of memory.
@@ -68,23 +66,16 @@ public class WebImageView extends ImageView implements ImageRequest.Listener {
   @SuppressWarnings({"UnusedDeclaration"})
   public WebImageView(Context context) {
     super(context);
-    initialize();
   }
 
   @SuppressWarnings({"UnusedDeclaration"})
   public WebImageView(Context context, AttributeSet attrs) {
     super(context, attrs);
-    initialize();
   }
 
   @SuppressWarnings({"UnusedDeclaration"})
   public WebImageView(Context context, AttributeSet attrs, int defStyle) {
     super(context, attrs, defStyle);
-    initialize();
-  }
-
-  private void initialize() {
-    uiHandler = new Handler();
   }
 
   /**
@@ -171,20 +162,15 @@ public class WebImageView extends ImageView implements ImageRequest.Listener {
   public void onBitmapLoaded(final ImageRequest request, final Bitmap bitmap) {
     if(request.imageUrl.equals(pendingImageUrl)) {
       LogWrapper.logMessage("WebImageView settinge image: " + pendingImageUrl);
-      
-      postToGuiThread(new Runnable() {
-        public void run() {
-          if(bitmap != null) {
-            setImageBitmap(bitmap);
-            currentState = States.LOADED;
-            loadedImageUrl = request.imageUrl;
-            pendingImageUrl = null;
-            if(listener != null) {
-              listener.onImageLoadComplete();
-            }
-          }
+      if (bitmap != null) {
+        setImageBitmap(bitmap);
+        currentState = States.LOADED;
+        loadedImageUrl = request.imageUrl;
+        pendingImageUrl = null;
+        if (listener != null) {
+          listener.onImageLoadComplete();
         }
-      });
+      }
     }
     else {
       LogWrapper.logMessage("WebImageView dropping image: " + request.imageUrl + ", waiting for: " + pendingImageUrl
@@ -205,17 +191,13 @@ public class WebImageView extends ImageView implements ImageRequest.Listener {
   public void onBitmapLoadError(String message) {
     currentState = States.ERROR;
     LogWrapper.logMessage(message);
-    postToGuiThread(new Runnable() {
-      public void run() {
-        // In case of error, lazily load the drawable here
-        if(errorImageResId > 0) {
-          errorImage = getResources().getDrawable(errorImageResId);
-        }
-        if(errorImage != null) {
-          setImageDrawable(errorImage);
-        }
-      }
-    });
+    // In case of error, lazily load the drawable here
+    if (errorImageResId > 0) {
+      errorImage = getResources().getDrawable(errorImageResId);
+    }
+    if (errorImage != null) {
+      setImageDrawable(errorImage);
+    }
     if(listener != null) {
       listener.onImageLoadError();
     }
@@ -239,15 +221,6 @@ public class WebImageView extends ImageView implements ImageRequest.Listener {
     if(listener != null) {
       listener.onImageLoadCancelled();
     }
-  }
-
-  /**
-   * Post a message to the GUI thread. This should be used for updating the component from
-   * background tasks.
-   * @param runnable Runnable task
-   */
-  public final void postToGuiThread(Runnable runnable) {
-    uiHandler.post(runnable);
   }
 
   @SuppressWarnings("UnusedDeclaration")
