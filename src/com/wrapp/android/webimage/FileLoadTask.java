@@ -6,13 +6,16 @@ import java.io.IOException;
 import java.util.Date;
 import java.util.concurrent.Callable;
 
+import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 
 public class FileLoadTask implements Callable<Bitmap> {
+  private Context context;
   private ImageRequest request;
   
-  public FileLoadTask(ImageRequest request) {
+  public FileLoadTask(Context context, ImageRequest request) {
+    this.context = context;
     this.request = request;
   }
 
@@ -31,13 +34,13 @@ public class FileLoadTask implements Callable<Bitmap> {
     Bitmap bitmap = null;
 
     FileInputStream inputStream = null;
-    File cacheFile = new File(ImageCache.getCacheDirectory(request.context), request.imageKey);
+    File cacheFile = new File(ImageCache.getCacheDirectory(context), request.imageKey);
     if(cacheFile.exists()) {
       try {
         Date now = new Date();
         long fileAgeInMs = now.getTime() - cacheFile.lastModified();
         if(fileAgeInMs > ImageCache.getCacheRecheckAgeInMs()) {
-          ImageLoader.getInstance(request.context).checkTimeStamp(request);
+          ImageLoader.getInstance(context).checkTimeStamp(request);
         }
 
         LogWrapper.logMessage("Loading image " + request.imageUrl + " from file cache");

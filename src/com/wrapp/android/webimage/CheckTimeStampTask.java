@@ -3,17 +3,21 @@ package com.wrapp.android.webimage;
 import java.io.File;
 import java.util.Date;
 
+import android.content.Context;
+
 public class CheckTimeStampTask implements Runnable {
+  private Context context;
   private ImageRequest request;
 
-  public CheckTimeStampTask(ImageRequest request) {
+  public CheckTimeStampTask(Context context, ImageRequest request) {
+    this.context = context;
     this.request = request;
   }
 
   @Override
   public void run() {
     LogWrapper.logMessage("Requesting timestamp for " + request.imageUrl);
-    File cacheFile = new File(ImageCache.getCacheDirectory(request.context), request.imageKey);
+    File cacheFile = new File(ImageCache.getCacheDirectory(context), request.imageKey);
     Date expirationDate = ImageDownloader.getServerTimestamp(request.imageUrl);
     Date now = new Date();
     if(expirationDate.after(now)) {
@@ -29,7 +33,7 @@ public class CheckTimeStampTask implements Runnable {
       LogWrapper.logMessage("Cached version of " + request.imageUrl.toString() + " found, but has expired.");
       cacheFile.delete();
       
-      ImageLoader.getInstance(request.context).forceUpdateImage(request.imageUrl, request.loadOptions);
+      ImageLoader.getInstance(context).forceUpdateImage(request.imageUrl, request.loadOptions);
     }
   }
 }

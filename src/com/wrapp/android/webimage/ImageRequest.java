@@ -23,15 +23,12 @@ package com.wrapp.android.webimage;
 
 import java.net.URL;
 
-import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 
 public final class ImageRequest {
-  public Context context;
   public String imageKey;
   public URL imageUrl;
-  public Listener listener;
   public BitmapFactory.Options loadOptions;
   public boolean forceDownload = false;
 
@@ -41,11 +38,39 @@ public final class ImageRequest {
     public void onBitmapLoadCancelled();
   }
 
-  public ImageRequest(final Context context, URL imageUrl, Listener listener, BitmapFactory.Options options) {
-    this.context = context;
+  public ImageRequest(URL imageUrl, BitmapFactory.Options options) {
     this.imageKey = ImageCache.getCacheKeyForUrl(imageUrl);
     this.imageUrl = imageUrl;
-    this.listener = listener;
     this.loadOptions = options;
+  }
+
+  @Override
+  public int hashCode() {
+    final int prime = 31;
+    int result = 1;
+    result = prime * result + ((imageUrl == null) ? 0 : imageUrl.hashCode());
+    return result;
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (this == obj) {
+      return true;
+    }
+    if (obj == null) {
+      return false;
+    }
+    if (!(obj instanceof ImageRequest)) {
+      return false;
+    }
+    ImageRequest other = (ImageRequest) obj;
+    if (imageUrl == null) {
+      if (other.imageUrl != null) {
+        return false;
+      }
+    } else if (!imageUrl.equals(other.imageUrl)) {
+      return false;
+    }
+    return true;
   }
 }
