@@ -1,14 +1,9 @@
 package com.wrapp.android.webimage;
 
 import java.net.URL;
-import java.util.Collections;
-import java.util.Map;
-import java.util.Set;
-import java.util.WeakHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import android.content.Context;
@@ -30,8 +25,7 @@ public class ImageLoader {
   private ExecutorService checkTimestamp;
   private AdaptingThreadPoolExecutor download;
   
-  private WeakHashMap<ImageRequest.Listener, ImageRequest> pendingListeners;
-  private WeakHashMap<ImageRequest, PendingTask> pendingTasks;
+  private PendingRequests pendingRequests;
 
   public static ImageLoader getInstance(Context context) {
     if (instance == null) {
@@ -45,8 +39,7 @@ public class ImageLoader {
     this.context = context.getApplicationContext();
     handler = new Handler();
 
-    pendingListeners = new WeakHashMap<ImageRequest.Listener, ImageRequest>();
-    pendingTasks = new WeakHashMap<ImageRequest, ImageLoader.PendingTask>();
+    pendingRequests = new PendingRequests();
     
     createExecutors();
   }
@@ -86,13 +79,7 @@ public class ImageLoader {
   }
   
   private void cancelAllRequestsInternal() {
-    for (Map.Entry<ImageRequest, PendingTask> entry : pendingTasks.entrySet()) {
-      entry.getValue().future.cancel(false);
-    }
-
-    // TODO: We should call the correct callbacks
-    pendingTasks.clear();
-    pendingListeners.clear();
+    pendingRequests.clear();
   }
   
   private void shutdownInternal() {
@@ -102,8 +89,7 @@ public class ImageLoader {
       checkTimestamp.shutdownNow();
       fileLoader.shutdownNow();
       
-      pendingTasks.clear();
-      pendingListeners.clear();
+      pendingRequests.clear();
       
       download.awaitTermination(SHUTDOWN_TIMEOUT_IN_MS, TimeUnit.MILLISECONDS);
     } catch (InterruptedException e) {
@@ -117,24 +103,8 @@ public class ImageLoader {
   private void load(URL imageUrl, ImageRequest.Listener listener, BitmapFactory.Options options) {
     ImageRequest request = new ImageRequest(imageUrl, options);
     
-    ImageRequest pendingRequest = pendingListeners.get(listener);
-    if (request.equals(pendingRequest)) {
-      // We are already pending for this request, do nothing
-      return;
-    } else if (pendingRequest != null) {
-      // This listener is pending for another request, remove us from it
-      LogWrapper.logMessage("Already pending, old: " + pendingRequest.imageUrl + ", new: " + request.imageUrl);
-      pendingListeners.remove(listener);
-      
-     if (!pendingTasks.get(pendingRequest).removeListener(listener)) {
-       // We were the only ones waiting for this task, remove it
-       pendingTasks.remove(pendingRequest);
-     }
-    }
-    
-    PendingTask pendingTask = pendingTasks.get(request);
-    if (pendingTask == null) {
-      // No other listeners are pending for this request, create it
+    if (!pendingRequests.addRequest(request, listener)) {
+      // We need to add a task
       CallbackTask task;
       if (ImageCache.isImageCached(context, request.imageKey)) {
         task = loadFromDisk(request);
@@ -142,14 +112,8 @@ public class ImageLoader {
         task = loadFromUrl(request);
       }
       
-      pendingTask = new PendingTask(task);
-      pendingTasks.put(request, pendingTask);
-    } else {
-      LogWrapper.logMessage("Reusing existing request: " + request.imageUrl);
+      pendingRequests.addTask(request, listener, task);
     }
-    
-    pendingTask.addListener(listener);
-    pendingListeners.put(listener, request);
   }
   
   private CallbackTask loadFromDisk(ImageRequest request) {
@@ -169,8 +133,7 @@ public class ImageLoader {
   private CallbackTask.Listener completionListener = new CallbackTask.Listener() {
     @Override
     public void onComplete(ImageRequest request) {
-      PendingTask task = pendingTasks.get(request);
-      if (task == null) {
+      if (!pendingRequests.isPending(request)) {
         // No longer pending
         LogWrapper.logMessage("Request no longer pending, dropping: " + request.imageUrl);
         
@@ -178,33 +141,31 @@ public class ImageLoader {
       }
       
       try {
-        Bitmap b = task.future.get();
+        Bitmap b = pendingRequests.getResult(request);
 
         if (b != null) {
           // Image was fetched from disk
-          for (ImageRequest.Listener listener : task.getListeners()) {
+          for (ImageRequest.Listener listener : pendingRequests.getListeners(request)) {
             listener.onBitmapLoaded(request, b);
-            pendingListeners.remove(listener);
           }
           
-          pendingTasks.remove(request);
+          pendingRequests.removeRequest(request);
         } else {
           // Image was downloaded to disk, fetch it
           // Only the future will change
           CallbackTask future = loadFromDisk(request);
-          task.future = future;
+          pendingRequests.swapFuture(request, future);
         }
       } catch (ExecutionException e) {
         // Request failed for some reason
         Throwable original = e.getCause();
         Log.e("WebImage", "Failed to fetch image: " + request.imageUrl, original);
 
-        for (ImageRequest.Listener listener : task.getListeners()) {
+        for (ImageRequest.Listener listener : pendingRequests.getListeners(request)) {
           listener.onBitmapLoadError(original.getMessage());
-          pendingListeners.remove(listener);
         }
-
-        pendingTasks.remove(request);
+        
+        pendingRequests.removeRequest(request);
       } catch (InterruptedException e) {
         // In case we get interrupted while getting the value,
         // shouldn't be able to happen as we only call it after completion
@@ -212,50 +173,4 @@ public class ImageLoader {
       }
     }
   };
-
-  private static class PendingTask {
-    public Future<Bitmap> future;
-    
-    private Set<ImageRequest.Listener> listeners;
-    
-    public PendingTask(Future<Bitmap> future) {
-      this.future = future;
-      
-      listeners = Collections.newSetFromMap(new WeakHashMap<ImageRequest.Listener, Boolean>());
-    }
-    
-    public void addListener(ImageRequest.Listener listener) {
-      listeners.add(listener);
-    }
-    
-    /**
-     * Remove a listener
-     * @return true if this task is still pending
-     */
-    public boolean removeListener(ImageRequest.Listener listener) {
-      if (!listeners.remove(listener)) {
-        throw new IllegalStateException("Request was not pending for this task");
-      }
-      
-      if (listeners.isEmpty()) {
-        // No other listeners, cancel this task
-        // It doesn't matter if successfully cancel it, if we don't
-        // the it will be ignored in the callback anyways
-        future.cancel(false);
-        
-        listener.onBitmapLoadCancelled();
-        
-        return false;
-      } else {
-        // Task is still pending for others
-        listener.onBitmapLoadCancelled();
-        
-        return true;
-      }
-    }
-    
-    public Set<ImageRequest.Listener> getListeners() {
-      return listeners;
-    }
-  }
 }
