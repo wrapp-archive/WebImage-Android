@@ -21,9 +21,9 @@ public class ImageLoader {
   private Handler handler;
 
   // Worker threads for different tasks, ordered from fast -> slow
-  private ExecutorService fileLoader;
-  private ExecutorService checkTimestamp;
-  private AdaptingThreadPoolExecutor download;
+  private ExecutorService fileLoaderExecutor;
+  private ExecutorService checkTimestampExecutor;
+  private AdaptingThreadPoolExecutor downloadExecutor;
   
   private PendingRequests pendingRequests;
 
@@ -57,11 +57,11 @@ public class ImageLoader {
   }
   
   AdaptingThreadPoolExecutor getDownloadExecutor() {
-    return download;
+    return downloadExecutor;
   }
   
   void checkTimeStamp(ImageRequest request) {
-    checkTimestamp.submit(new CheckTimeStampTask(context, request));
+    checkTimestampExecutor.submit(new CheckTimeStampTask(context, request));
   }
   
   void forceUpdateImage(URL url, BitmapFactory.Options options) {
@@ -69,13 +69,13 @@ public class ImageLoader {
     ImageRequest request = new ImageRequest(url, options);
     request.forceDownload = true;
     
-    download.submit(new DownloadTask(context, request));
+    downloadExecutor.submit(new DownloadTask(context, request));
   }
   
   private void createExecutors() {
-    fileLoader = Executors.newSingleThreadExecutor(new PriorityThreadFactory(Thread.NORM_PRIORITY - 1));
-    checkTimestamp = Executors.newSingleThreadExecutor(new PriorityThreadFactory(Thread.MIN_PRIORITY));
-    download = new AdaptingThreadPoolExecutor(context);
+    fileLoaderExecutor = Executors.newSingleThreadExecutor(new PriorityThreadFactory(Thread.NORM_PRIORITY - 1));
+    checkTimestampExecutor = Executors.newSingleThreadExecutor(new PriorityThreadFactory(Thread.MIN_PRIORITY));
+    downloadExecutor = new AdaptingThreadPoolExecutor(context);
   }
   
   private void cancelAllRequestsInternal() {
@@ -85,13 +85,13 @@ public class ImageLoader {
   private void shutdownInternal() {
     LogWrapper.logMessage("Shutting down");
     try {
-      download.shutdownNow();
-      checkTimestamp.shutdownNow();
-      fileLoader.shutdownNow();
+      downloadExecutor.shutdownNow();
+      checkTimestampExecutor.shutdownNow();
+      fileLoaderExecutor.shutdownNow();
       
       pendingRequests.clear();
       
-      download.awaitTermination(SHUTDOWN_TIMEOUT_IN_MS, TimeUnit.MILLISECONDS);
+      downloadExecutor.awaitTermination(SHUTDOWN_TIMEOUT_IN_MS, TimeUnit.MILLISECONDS);
     } catch (InterruptedException e) {
       // Ignore
     }
@@ -118,14 +118,14 @@ public class ImageLoader {
   
   private CallbackFuture loadFromDisk(ImageRequest request) {
     CallbackFuture task = new CallbackFuture(new FileLoadTask(context, request), request, completionListener, handler);
-    fileLoader.submit(task);
+    fileLoaderExecutor.submit(task);
     
     return task;
   }
   
   private CallbackFuture loadFromUrl(ImageRequest request) {
     CallbackFuture task = new CallbackFuture(new DownloadTask(context, request), request, completionListener, handler);
-    download.submit(task);
+    downloadExecutor.submit(task);
     
     return task;
   }
