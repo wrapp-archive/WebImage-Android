@@ -40,7 +40,6 @@ import org.apache.http.client.methods.HttpHead;
 import org.apache.http.client.params.HttpClientParams;
 import org.apache.http.entity.BufferedHttpEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.params.CoreConnectionPNames;
 import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpParams;
 
@@ -86,6 +85,34 @@ public class ImageDownloader {
     }
   }
   
+  public static Date getServerTimestamp(URL imageUrl) throws IOException {
+    HttpClient client = createHttpClient(getUserAgent());
+    
+    try {
+      String url = imageUrl.toString();
+      LogWrapper.logMessage("Requesting image " + url);
+      
+      HttpResponse response = client.execute(new HttpHead(url));
+      
+      Header[] header = response.getHeaders("Expires");
+      
+      if(header != null && header.length > 0) {
+        Date expirationDate = parseServerDateHeader(header[0]);
+        LogWrapper.logMessage("Image at " + imageUrl.toString() + " expires on " + expirationDate.toString());
+        
+        return expirationDate;
+      } else {
+        // Could not find any date
+        return new Date();
+      }
+    } finally {
+      if (client instanceof AndroidHttpClient) {
+        AndroidHttpClient androidClient = (AndroidHttpClient) client;
+        androidClient.close();
+      }
+    }
+  }
+
   private static HttpClient createHttpClient(String userAgent) {
     HttpClient client = getHttpClient();
 
@@ -96,49 +123,6 @@ public class ImageDownloader {
     HttpClientParams.setRedirecting(params, true);
     
     return client;
-  }
-
-  public static Date getServerTimestamp(final URL imageUrl) {
-    Date expirationDate = new Date();
-    HttpClient httpClient = null;
-
-    try {
-      final String imageUrlString = imageUrl.toString();
-      if(imageUrlString == null || imageUrlString.length() == 0) {
-        throw new Exception("Passed empty URL");
-      }
-      LogWrapper.logMessage("Requesting image " + imageUrlString);
-      httpClient = getHttpClient();
-      final HttpParams httpParams = httpClient.getParams();
-      httpParams.setParameter(CoreConnectionPNames.SO_TIMEOUT, CONNECTION_TIMEOUT_IN_MS);
-      httpParams.setParameter(CoreConnectionPNames.CONNECTION_TIMEOUT, CONNECTION_TIMEOUT_IN_MS);
-      httpParams.setParameter(CoreConnectionPNames.SOCKET_BUFFER_SIZE, DEFAULT_BUFFER_SIZE);
-      final HttpHead httpHead = new HttpHead(imageUrlString);
-      final HttpResponse response = httpClient.execute(httpHead);
-
-      Header[] header = response.getHeaders("Expires");
-      if(header != null && header.length > 0) {
-        expirationDate = parseServerDateHeader(header[0]);
-        LogWrapper.logMessage("Image at " + imageUrl.toString() + " expires on " + expirationDate.toString());
-      }
-    }
-    catch(Exception e) {
-      LogWrapper.logException(e);
-    }
-    finally {
-      if(httpClient != null) {
-        try {
-          if(httpClient instanceof AndroidHttpClient) {
-            ((AndroidHttpClient)httpClient).close();
-          }
-        }
-        catch(Exception e) {
-          // Ignore
-        }
-      }
-    }
-
-    return expirationDate;
   }
 
   // AndroidHttpClient was introduced in API Level 8, but many 2.1 phones actually have it. Why this is,
