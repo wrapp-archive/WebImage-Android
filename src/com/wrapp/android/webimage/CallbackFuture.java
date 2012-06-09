@@ -6,7 +6,7 @@ import java.util.concurrent.FutureTask;
 import android.graphics.Bitmap;
 import android.os.Handler;
 
-public class CallbackTask extends FutureTask<Bitmap> {
+public class CallbackFuture extends FutureTask<Bitmap> {
   public interface Listener {
     void onComplete(ImageRequest request);
   }
@@ -15,7 +15,7 @@ public class CallbackTask extends FutureTask<Bitmap> {
   private Listener listener;
   private Handler handler;
   
-  public CallbackTask(Callable<Bitmap> callback, ImageRequest request, Listener listener, Handler handler) {
+  public CallbackFuture(Callable<Bitmap> callback, ImageRequest request, Listener listener, Handler handler) {
     super(callback);
     
     this.request = request;
@@ -23,7 +23,7 @@ public class CallbackTask extends FutureTask<Bitmap> {
     this.handler = handler;
   }
   
-  public CallbackTask(Runnable runnable, Bitmap result, ImageRequest request, Listener listener, Handler handler) {
+  public CallbackFuture(Runnable runnable, Bitmap result, ImageRequest request, Listener listener, Handler handler) {
     super(runnable, result);
     
     this.request = request;

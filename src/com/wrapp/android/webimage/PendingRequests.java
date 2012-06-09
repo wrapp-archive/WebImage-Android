@@ -52,7 +52,7 @@ class PendingRequests {
     }
   }
   
-  public void addTask(ImageRequest request, ImageRequest.Listener listener, CallbackTask task) {
+  public void addTask(ImageRequest request, ImageRequest.Listener listener, CallbackFuture task) {
     PendingTask pendingTask = new PendingTask(task);
     pendingTasks.put(request, pendingTask);
     

@@ -105,7 +105,7 @@ public class ImageLoader {
     
     if (!pendingRequests.addRequest(request, listener)) {
       // We need to add a task
-      CallbackTask task;
+      CallbackFuture task;
       if (ImageCache.isImageCached(context, request.imageKey)) {
         task = loadFromDisk(request);
       } else {
@@ -116,21 +116,21 @@ public class ImageLoader {
     }
   }
   
-  private CallbackTask loadFromDisk(ImageRequest request) {
-    CallbackTask task = new CallbackTask(new FileLoadTask(context, request), request, completionListener, handler);
+  private CallbackFuture loadFromDisk(ImageRequest request) {
+    CallbackFuture task = new CallbackFuture(new FileLoadTask(context, request), request, completionListener, handler);
     fileLoader.submit(task);
     
     return task;
   }
   
-  private CallbackTask loadFromUrl(ImageRequest request) {
-    CallbackTask task = new CallbackTask(new DownloadTask(context, request), request, completionListener, handler);
+  private CallbackFuture loadFromUrl(ImageRequest request) {
+    CallbackFuture task = new CallbackFuture(new DownloadTask(context, request), request, completionListener, handler);
     download.submit(task);
     
     return task;
   }
 
-  private CallbackTask.Listener completionListener = new CallbackTask.Listener() {
+  private CallbackFuture.Listener completionListener = new CallbackFuture.Listener() {
     @Override
     public void onComplete(ImageRequest request) {
       if (!pendingRequests.isPending(request)) {
@@ -153,7 +153,7 @@ public class ImageLoader {
         } else {
           // Image was downloaded to disk, fetch it
           // Only the future will change
-          CallbackTask future = loadFromDisk(request);
+          CallbackFuture future = loadFromDisk(request);
           pendingRequests.swapFuture(request, future);
         }
       } catch (ExecutionException e) {
