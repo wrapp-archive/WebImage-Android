@@ -4,7 +4,10 @@ import java.net.URL;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+
+import com.wrapp.android.webimage.DispatchTask.NextTask;
 
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -21,6 +24,7 @@ public class ImageLoader {
   private Handler handler;
 
   // Worker threads for different tasks, ordered from fast -> slow
+  private ExecutorService dispatchExecutor;
   private ExecutorService fileLoaderExecutor;
   private ExecutorService checkTimestampExecutor;
   private AdaptingThreadPoolExecutor downloadExecutor;
@@ -73,6 +77,7 @@ public class ImageLoader {
   }
   
   private void createExecutors() {
+    dispatchExecutor = Executors.newSingleThreadExecutor(new PriorityThreadFactory(Thread.NORM_PRIORITY - 1));
     fileLoaderExecutor = Executors.newSingleThreadExecutor(new PriorityThreadFactory(Thread.NORM_PRIORITY - 1));
     checkTimestampExecutor = Executors.newSingleThreadExecutor(new PriorityThreadFactory(Thread.MIN_PRIORITY));
     downloadExecutor = new AdaptingThreadPoolExecutor(context);
@@ -85,9 +90,10 @@ public class ImageLoader {
   private void shutdownInternal() {
     LogWrapper.logMessage("Shutting down");
     try {
-      downloadExecutor.shutdownNow();
-      checkTimestampExecutor.shutdownNow();
+      dispatchExecutor.shutdownNow();
       fileLoaderExecutor.shutdownNow();
+      checkTimestampExecutor.shutdownNow();
+      downloadExecutor.shutdownNow();
       
       pendingRequests.clear();
       
@@ -104,35 +110,84 @@ public class ImageLoader {
     ImageRequest request = new ImageRequest(imageUrl, options);
     
     if (!pendingRequests.addRequest(request, listener)) {
-      // We need to add a task
-      CallbackFuture task;
-      if (ImageCache.isImageCached(context, request.imageKey)) {
-        task = loadFromDisk(request);
-      } else {
-        task = loadFromUrl(request);
-      }
+      // Start with the dispatch task who checks to see if
+      // the image is cached and then dispatches it
+      CallbackFuture<?> task = dispatchRequest(request);
       
       pendingRequests.addTask(request, listener, task);
     }
   }
   
-  private CallbackFuture loadFromDisk(ImageRequest request) {
-    CallbackFuture task = new CallbackFuture(new FileLoadTask(context, request), request, completionListener, handler);
+  private CallbackFuture<?> dispatchRequest(ImageRequest request) {
+    CallbackFuture<DispatchTask.NextTask> task =
+        new CallbackFuture<DispatchTask.NextTask>(new DispatchTask(context, request), request, dispatchListener, handler);
+    dispatchExecutor.submit(task);
+    
+    return task;
+  }
+
+  private CallbackFuture<?> loadFromUrl(ImageRequest request) {
+    CallbackFuture<Void> task = new CallbackFuture<Void>(new DownloadTask(context, request), request, downloadListener, handler);
+    downloadExecutor.submit(task);
+    
+    return task;
+  }
+  
+  private CallbackFuture<?> loadFromDisk(ImageRequest request) {
+    CallbackFuture<Bitmap> task = new CallbackFuture<Bitmap>(new FileLoadTask(context, request), request, fileListener, handler);
     fileLoaderExecutor.submit(task);
     
     return task;
   }
   
-  private CallbackFuture loadFromUrl(ImageRequest request) {
-    CallbackFuture task = new CallbackFuture(new DownloadTask(context, request), request, completionListener, handler);
-    downloadExecutor.submit(task);
-    
-    return task;
-  }
-
-  private CallbackFuture.Listener completionListener = new CallbackFuture.Listener() {
+  private BaseListener<DispatchTask.NextTask> dispatchListener = new BaseListener<DispatchTask.NextTask>() {
     @Override
-    public void onComplete(ImageRequest request) {
+    public void requestComplete(ImageRequest request, Future<NextTask> future) throws ExecutionException, InterruptedException {
+      CallbackFuture<?> newFuture = null;
+      
+      switch (future.get()) {
+        case FILE:
+          newFuture = loadFromDisk(request);
+          break;
+        case WEB:
+          newFuture = loadFromUrl(request);
+          break;
+      }
+      
+      pendingRequests.swapFuture(request,  newFuture);
+    }
+  };
+  
+  private BaseListener<Void> downloadListener = new BaseListener<Void>() {
+    @Override
+    public void requestComplete(ImageRequest request, Future<Void> future) throws ExecutionException, InterruptedException {
+      // Download completed, load from disk
+      future.get();
+      
+      CallbackFuture<?> newFuture = loadFromDisk(request);
+      pendingRequests.swapFuture(request, newFuture);
+    }
+  };
+  
+  private BaseListener<Bitmap> fileListener = new BaseListener<Bitmap>() {
+    @Override
+    public void requestComplete(ImageRequest request, Future<Bitmap> future) throws ExecutionException, InterruptedException {
+      // Bitmap was loaded from disk
+      Bitmap b = future.get();
+      
+      for (ImageRequest.Listener listener : pendingRequests.getListeners(request)) {
+        listener.onBitmapLoaded(request, b);
+      }
+      
+      // We are done
+      pendingRequests.removeRequest(request);
+    }
+  };
+  
+  private abstract class BaseListener<T> implements CallbackFuture.Listener<T> {
+    @Override
+    public final void onComplete(ImageRequest request, Future<T> future) {
+      // Check if we are still interested in this request
       if (!pendingRequests.isPending(request)) {
         // No longer pending
         LogWrapper.logMessage("Request no longer pending, dropping: " + request.imageUrl);
@@ -141,21 +196,7 @@ public class ImageLoader {
       }
       
       try {
-        Bitmap b = pendingRequests.getResult(request);
-
-        if (b != null) {
-          // Image was fetched from disk
-          for (ImageRequest.Listener listener : pendingRequests.getListeners(request)) {
-            listener.onBitmapLoaded(request, b);
-          }
-          
-          pendingRequests.removeRequest(request);
-        } else {
-          // Image was downloaded to disk, fetch it
-          // Only the future will change
-          CallbackFuture future = loadFromDisk(request);
-          pendingRequests.swapFuture(request, future);
-        }
+        requestComplete(request, future);
       } catch (ExecutionException e) {
         // Request failed for some reason
         Throwable original = e.getCause();
@@ -172,5 +213,7 @@ public class ImageLoader {
         throw new RuntimeException(e);
       }
     }
-  };
+    
+    public abstract void requestComplete(ImageRequest request, Future<T> future) throws ExecutionException, InterruptedException;
+  }
 }

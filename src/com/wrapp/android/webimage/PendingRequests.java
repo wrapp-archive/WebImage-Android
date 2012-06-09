@@ -4,10 +4,7 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 import java.util.WeakHashMap;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
-
-import android.graphics.Bitmap;
 
 class PendingRequests {
   private WeakHashMap<ImageRequest.Listener, ImageRequest> pendingListeners;
@@ -22,12 +19,14 @@ class PendingRequests {
     return pendingTasks.containsKey(request);
   }
   
-  /**
-   * Add a request
-   * 
-   * @return true if possible without anything more, false if you need to add
+/**
+ * Add a request
+ * 
+ * @param request resource to fetch
+ * @param listener who is interested in the result
+ * @return true if possible without anything more, false if you need to add
    * a task via {@code addTask()}
-   */
+ */
   public boolean addRequest(ImageRequest request, ImageRequest.Listener listener) {
     ImageRequest pendingRequest = pendingListeners.get(listener);
     if (request.equals(pendingRequest)) {
@@ -52,14 +51,14 @@ class PendingRequests {
     }
   }
   
-  public void addTask(ImageRequest request, ImageRequest.Listener listener, CallbackFuture task) {
+  public void addTask(ImageRequest request, ImageRequest.Listener listener, Future<?> task) {
     PendingTask pendingTask = new PendingTask(task);
     pendingTasks.put(request, pendingTask);
     
     pendingTask.addListener(listener);
   }
   
-  public void swapFuture(ImageRequest request, Future<Bitmap> future) {
+  public void swapFuture(ImageRequest request, Future<?> future) {
     PendingTask task = pendingTasks.get(request);
     task.future = future;
   }
@@ -72,12 +71,7 @@ class PendingRequests {
       pendingTasks.remove(request);
     }
   }
-  
-  public Bitmap getResult(ImageRequest request) throws InterruptedException, ExecutionException {
-    PendingTask task = pendingTasks.get(request);
-    return task.future.get();
-  }
-  
+
   public void clear() {
     for (Map.Entry<ImageRequest, PendingTask> entry : pendingTasks.entrySet()) {
       entry.getValue().future.cancel(false);
@@ -103,11 +97,11 @@ class PendingRequests {
   }
   
   private static class PendingTask {
-    public Future<Bitmap> future;
+    public Future<?> future;
     
     private Set<ImageRequest.Listener> listeners;
     
-    public PendingTask(Future<Bitmap> future) {
+    public PendingTask(Future<?> future) {
       this.future = future;
       
       listeners = Collections.newSetFromMap(new WeakHashMap<ImageRequest.Listener, Boolean>());

@@ -4,9 +4,8 @@ import java.io.IOException;
 import java.util.concurrent.Callable;
 
 import android.content.Context;
-import android.graphics.Bitmap;
 
-public class DownloadTask implements Callable<Bitmap> {
+public class DownloadTask implements Callable<Void> {
   private Context context;
   private ImageRequest request;
 
@@ -16,7 +15,7 @@ public class DownloadTask implements Callable<Bitmap> {
   }
   
   @Override
-  public Bitmap call() throws Exception {
+  public Void call() throws Exception {
     if (ImageCache.isImageCached(context, request.imageKey) && !request.forceDownload) {
       return null;
     } else if (ImageDownloader.loadImage(context, request.imageKey, request.imageUrl)) {
