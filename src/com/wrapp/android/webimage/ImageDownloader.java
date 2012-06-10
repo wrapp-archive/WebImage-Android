@@ -21,11 +21,15 @@
 
 package com.wrapp.android.webimage;
 
-import java.io.BufferedOutputStream;
+import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.URL;
+import java.nio.ByteBuffer;
+import java.nio.channels.Channels;
+import java.nio.channels.FileChannel;
+import java.nio.channels.ReadableByteChannel;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -38,7 +42,6 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpHead;
 import org.apache.http.client.params.HttpClientParams;
-import org.apache.http.entity.BufferedHttpEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpParams;
@@ -63,15 +66,25 @@ public class ImageDownloader {
         throw new IOException("Entity is null");
       }
       
+      ReadableByteChannel fin = Channels.newChannel(new BufferedInputStream(entity.getContent()));
+      
       File cacheFile = File.createTempFile("image-", "tmp", ImageCache.getCacheDirectory(context));
-      BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(cacheFile));
+      FileChannel fout = new FileOutputStream(cacheFile).getChannel();
+      
+      try {
+        ByteBuffer buff = ByteBuffer.allocate(4096);
+        while (fin.read(buff) != -1 || buff.position() > 0) {
+            buff.flip();
+            fout.write(buff);
+            buff.compact();
+        }
+      } finally {
+        // Ensure we close streams in case we get interrupted
+        fin.close();
+        fout.close();
+        entity.consumeContent();
+      }
 
-      BufferedHttpEntity bufferedEntity = new BufferedHttpEntity(entity);
-      bufferedEntity.writeTo(out);
-      
-      out.close();
-      bufferedEntity.consumeContent();
-      
       LogWrapper.logMessage("Downloaded image " + imageUrl + " to file cache");
       File outputFile = new File(ImageCache.getCacheDirectory(context), imageKey);
       cacheFile.renameTo(outputFile);

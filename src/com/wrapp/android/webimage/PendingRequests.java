@@ -124,7 +124,7 @@ class PendingRequests {
         // No other listeners, cancel this task
         // It doesn't matter if we successfully cancel it, if we don't
         // then it will be ignored in the callback anyways
-        future.cancel(false);
+        future.cancel(true);
         
         listener.onBitmapLoadCancelled();
         
