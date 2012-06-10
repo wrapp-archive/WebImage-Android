@@ -21,198 +21,108 @@
 
 package com.wrapp.android.webimage;
 
-import android.content.Context;
-import android.net.http.AndroidHttpClient;
-import android.os.Build;
-import org.apache.http.*;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpHead;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.params.CoreConnectionPNames;
-import org.apache.http.params.HttpParams;
-
-import java.io.*;
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.net.URL;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 
+import org.apache.http.Header;
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpHead;
+import org.apache.http.client.params.HttpClientParams;
+import org.apache.http.entity.BufferedHttpEntity;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.params.HttpConnectionParams;
+import org.apache.http.params.HttpParams;
+
+import android.content.Context;
+import android.net.http.AndroidHttpClient;
+import android.os.Build;
+
 public class ImageDownloader {
   private static final int CONNECTION_TIMEOUT_IN_MS = 10 * 1000;
   private static final int DEFAULT_BUFFER_SIZE = 8192;
-  private static final int MAX_REDIRECT_COUNT = 4;
   private static String userAgent = null;
 
-  public static boolean loadImage(final Context context, final String imageKey, final URL imageUrl) {
-    return loadImage(context, imageKey, imageUrl, 0);
-  }
-
-  private static boolean loadImage(final Context context, final String imageKey, final URL imageUrl, int redirectCount) {
-    if(redirectCount > MAX_REDIRECT_COUNT) {
-      LogWrapper.logMessage("Too many redirects!");
-      return false;
-    }
-
-    HttpClient httpClient = null;
-    HttpEntity responseEntity = null;
-    BufferedInputStream bufferedInputStream = null;
-    BufferedOutputStream bufferedOutputStream = null;
-
+  public static boolean loadImage(Context context, String imageKey, URL imageUrl) throws IOException {
+    HttpClient client = createHttpClient(getUserAgent());
+    
     try {
-      final String imageUrlString = imageUrl.toString();
-      if(imageUrlString == null || imageUrlString.length() == 0) {
-        throw new Exception("Passed empty URL");
+      HttpResponse response = client.execute(new HttpGet(imageUrl.toString()));
+      
+      HttpEntity entity = response.getEntity();
+      if (entity == null) {
+        throw new IOException("Entity is null");
       }
-      LogWrapper.logMessage("Requesting image " + imageUrlString);
-      httpClient = getHttpClient();
-      final HttpParams httpParams = httpClient.getParams();
-      httpParams.setParameter(CoreConnectionPNames.SO_TIMEOUT, CONNECTION_TIMEOUT_IN_MS);
-      httpParams.setParameter(CoreConnectionPNames.CONNECTION_TIMEOUT, CONNECTION_TIMEOUT_IN_MS);
-      httpParams.setParameter(CoreConnectionPNames.SOCKET_BUFFER_SIZE, DEFAULT_BUFFER_SIZE);
-      final HttpGet httpGet = new HttpGet(imageUrlString);
-      final HttpResponse response = httpClient.execute(httpGet);
-
-      responseEntity = response.getEntity();
-      if(responseEntity == null) {
-        throw new Exception("No response entity for image " + imageUrl.toString());
-      }
-      final StatusLine statusLine = response.getStatusLine();
-      final int statusCode = statusLine.getStatusCode();
-      switch(statusCode) {
-        case HttpStatus.SC_OK:
-          break;
-        case HttpStatus.SC_MOVED_TEMPORARILY:
-        case HttpStatus.SC_MOVED_PERMANENTLY:
-        case HttpStatus.SC_SEE_OTHER:
-          final String location = response.getFirstHeader("Location").getValue();
-          LogWrapper.logMessage("Image redirected to " + location);
-          // Force close the connection now, otherwise we risk leaking too many open HTTP connections
-          responseEntity.consumeContent();
-          responseEntity = null;
-          if(httpClient instanceof AndroidHttpClient) {
-            ((AndroidHttpClient)httpClient).close();
-          }
-          httpClient = null;
-          return loadImage(context, imageKey, new URL(location), redirectCount + 1);
-        default:
-          LogWrapper.logMessage("Could not download image, got status code " + statusCode);
-          return false;
-      }
-
-      bufferedInputStream = new BufferedInputStream(responseEntity.getContent());
+      
       File cacheFile = File.createTempFile("image-", "tmp", ImageCache.getCacheDirectory(context));
-      bufferedOutputStream = new BufferedOutputStream(new FileOutputStream(cacheFile));
+      BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(cacheFile));
 
-      long contentSize = responseEntity.getContentLength();
-      long totalBytesRead = 0;
-      try {
-        int bytesRead;
-        final byte[] buffer = new byte[DEFAULT_BUFFER_SIZE];
-        do {
-          bytesRead = bufferedInputStream.read(buffer, 0, DEFAULT_BUFFER_SIZE);
-          if(bytesRead > 0) {
-            bufferedOutputStream.write(buffer, 0, bytesRead);
-            totalBytesRead += bytesRead;
-          }
-        } while(bytesRead > 0);
-      }
-      catch(IOException e) {
-        LogWrapper.logException(e);
-        return false;
-      }
-
-      if(totalBytesRead != contentSize) {
-        LogWrapper.logMessage("Short read! Expected " + contentSize + "b, got " + totalBytesRead);
-        return false;
-      }
-      else {
-        LogWrapper.logMessage("Downloaded image " + imageUrlString + " to file cache");
-        File outputFile = new File(ImageCache.getCacheDirectory(context), imageKey);
-        cacheFile.renameTo(outputFile);
+      BufferedHttpEntity bufferedEntity = new BufferedHttpEntity(entity);
+      bufferedEntity.writeTo(out);
+      
+      out.close();
+      bufferedEntity.consumeContent();
+      
+      LogWrapper.logMessage("Downloaded image " + imageUrl + " to file cache");
+      File outputFile = new File(ImageCache.getCacheDirectory(context), imageKey);
+      cacheFile.renameTo(outputFile);
+      
+      return true;
+    } finally {
+      if (client instanceof AndroidHttpClient) {
+        AndroidHttpClient androidClient = (AndroidHttpClient) client;
+        androidClient.close();
       }
     }
-    catch(IOException e) {
-      LogWrapper.logException(e);
-      return false;
-    }
-    catch(Exception e) {
-      LogWrapper.logException(e);
-      return false;
-    }
-    finally {
-      try {
-        if(bufferedInputStream != null) {
-          bufferedInputStream.close();
-        }
-        if(bufferedOutputStream != null) {
-          bufferedOutputStream.flush();
-          bufferedOutputStream.close();
-        }
-        if(responseEntity != null) {
-          responseEntity.consumeContent();
-        }
+  }
+  
+  public static Date getServerTimestamp(URL imageUrl) throws IOException {
+    HttpClient client = createHttpClient(getUserAgent());
+    
+    try {
+      String url = imageUrl.toString();
+      LogWrapper.logMessage("Requesting image " + url);
+      
+      HttpResponse response = client.execute(new HttpHead(url));
+      
+      Header[] header = response.getHeaders("Expires");
+      
+      if(header != null && header.length > 0) {
+        Date expirationDate = parseServerDateHeader(header[0]);
+        LogWrapper.logMessage("Image at " + imageUrl.toString() + " expires on " + expirationDate.toString());
+        
+        return expirationDate;
+      } else {
+        // Could not find any date
+        return new Date();
       }
-      catch(IOException e) {
-        LogWrapper.logException(e);
-      }
-      if(httpClient != null) {
-        try {
-          if(httpClient instanceof AndroidHttpClient) {
-            ((AndroidHttpClient)httpClient).close();
-          }
-        }
-        catch(Exception e) {
-          // Ignore
-        }
+    } finally {
+      if (client instanceof AndroidHttpClient) {
+        AndroidHttpClient androidClient = (AndroidHttpClient) client;
+        androidClient.close();
       }
     }
-
-    return true;
   }
 
-  public static Date getServerTimestamp(final URL imageUrl) {
-    Date expirationDate = new Date();
-    HttpClient httpClient = null;
+  private static HttpClient createHttpClient(String userAgent) {
+    HttpClient client = getHttpClient();
 
-    try {
-      final String imageUrlString = imageUrl.toString();
-      if(imageUrlString == null || imageUrlString.length() == 0) {
-        throw new Exception("Passed empty URL");
-      }
-      LogWrapper.logMessage("Requesting image " + imageUrlString);
-      httpClient = getHttpClient();
-      final HttpParams httpParams = httpClient.getParams();
-      httpParams.setParameter(CoreConnectionPNames.SO_TIMEOUT, CONNECTION_TIMEOUT_IN_MS);
-      httpParams.setParameter(CoreConnectionPNames.CONNECTION_TIMEOUT, CONNECTION_TIMEOUT_IN_MS);
-      httpParams.setParameter(CoreConnectionPNames.SOCKET_BUFFER_SIZE, DEFAULT_BUFFER_SIZE);
-      final HttpHead httpHead = new HttpHead(imageUrlString);
-      final HttpResponse response = httpClient.execute(httpHead);
-
-      Header[] header = response.getHeaders("Expires");
-      if(header != null && header.length > 0) {
-        expirationDate = parseServerDateHeader(header[0]);
-        LogWrapper.logMessage("Image at " + imageUrl.toString() + " expires on " + expirationDate.toString());
-      }
-    }
-    catch(Exception e) {
-      LogWrapper.logException(e);
-    }
-    finally {
-      if(httpClient != null) {
-        try {
-          if(httpClient instanceof AndroidHttpClient) {
-            ((AndroidHttpClient)httpClient).close();
-          }
-        }
-        catch(Exception e) {
-          // Ignore
-        }
-      }
-    }
-
-    return expirationDate;
+    HttpParams params = client.getParams();
+    HttpConnectionParams.setConnectionTimeout(params, CONNECTION_TIMEOUT_IN_MS);
+    HttpConnectionParams.setSoTimeout(params, CONNECTION_TIMEOUT_IN_MS);
+    HttpConnectionParams.setSocketBufferSize(params, DEFAULT_BUFFER_SIZE);
+    HttpClientParams.setRedirecting(params, true);
+    
+    return client;
   }
 
   // AndroidHttpClient was introduced in API Level 8, but many 2.1 phones actually have it. Why this is,
