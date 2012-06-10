@@ -101,15 +101,15 @@ public class WebImageListActivity extends ListActivity implements WebImageView.L
   @Override
   protected void onPause() {
     super.onPause();
-    WebImage.cancelAllRequests();
     unregisterReceiver(connectivityChangeReceiver);
+    WebImage.cancelAllRequests(this);
   }
 
   @Override
   protected void onStop() {
     super.onStop();
     LogWrapper.logMessage("Stopping activity");
-    WebImage.shutdown();
+    WebImage.shutdown(this);
   }
 
   @Override
@@ -126,7 +126,7 @@ public class WebImageListActivity extends ListActivity implements WebImageView.L
         refresh();
         break;
       case R.id.MainMenuClearCachesItem:
-        WebImage.cancelAllRequests();
+        WebImage.cancelAllRequests(this);
         WebImage.clearOldCacheFiles(this, 0);
         Toast toast = Toast.makeText(this, "Caches cleared", Toast.LENGTH_SHORT);
         toast.show();
@@ -198,7 +198,7 @@ public class WebImageListActivity extends ListActivity implements WebImageView.L
     final WebImageListAdapter webImageListAdapter = (WebImageListAdapter)getListAdapter();
     final boolean shouldRestrictMemoryUsage = !webImageListAdapter.getShouldRestrictMemoryUsage();
     webImageListAdapter.setShouldRestrictMemoryUsage(shouldRestrictMemoryUsage);
-    WebImage.cancelAllRequests();
+    WebImage.cancelAllRequests(this);
     WebImage.clearOldCacheFiles(this, 0);
     final String toastMessage = "Restrict memory usage: " + (shouldRestrictMemoryUsage ? "enabled" : "disabled");
     Toast toast = Toast.makeText(this, toastMessage, Toast.LENGTH_SHORT);

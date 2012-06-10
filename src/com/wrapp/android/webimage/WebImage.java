@@ -26,6 +26,16 @@ import android.graphics.BitmapFactory;
 
 /** Endpoint class for all main library tasks. */
 public class WebImage {
+  private static ImageLoader imageLoader;
+  
+  public static ImageLoader getLoader(Context context) {
+    if (imageLoader == null) {
+      imageLoader = new ImageLoader(context);
+    }
+    
+    return imageLoader;
+  }
+  
   // Loading Images ////////////////////////////////////////////////////////////////////////////////////////////////////
 
   /**
@@ -36,8 +46,8 @@ public class WebImage {
    * @param imageUrl URL to load the image from
    * @param listener Object which will be notified when the request is complete
    */
-  public static void load(final Context context, String imageUrl, ImageRequest.Listener listener) {
-    ImageLoader.load(context, new ImageRequest(imageUrl), listener);
+  public static void load(Context context, String imageUrl, ImageRequest.Listener listener) {
+    load(context, new ImageRequest(imageUrl), listener);
   }
 
   /**
@@ -50,8 +60,20 @@ public class WebImage {
    * @param options Options to use when loading the image. See the documentation for {@link BitmapFactory.Options}
    * for more details. Can be null.
    */
-  public static void load(final Context context, String imageUrl, ImageRequest.Listener listener, BitmapFactory.Options options) {
-    ImageLoader.load(context, new ImageRequest(imageUrl, new StandardBitmapLoader(options)), listener);
+  public static void load(Context context, String imageUrl, ImageRequest.Listener listener, BitmapFactory.Options options) {
+    load(context, new ImageRequest(imageUrl, new StandardBitmapLoader(options)), listener);
+  }
+  
+  /**
+   * Load an image from URL to the given listener. This is a non-blocking call which is run in
+   * a background thread. It is safe to call this method multiple times; duplicate requests will
+   * be ignored.
+   * @param context Context used for getting app's package name
+   * @param request Image request
+   * @param listener Object which will be notified when the request is complete
+   */
+  public static void load(Context context, ImageRequest request, ImageRequest.Listener listener) {
+    getLoader(context).load(request, listener);
   }
 
   // Image Cache Operations ////////////////////////////////////////////////////////////////////////////////////////////
@@ -73,7 +95,7 @@ public class WebImage {
    * initialization to prevent the file cache from growing too large.
    * @param context Context used for getting app's package name
    */
-  public static void clearOldCacheFiles(final Context context) {
+  public static void clearOldCacheFiles(Context context) {
     ImageCache.clearOldCacheFiles(context);
   }
 
@@ -117,7 +139,7 @@ public class WebImage {
    * be other background threads for reading cached images, checking timestamps, etc.
    * @param value Number of threads
    */
-  public static void setMaxDownloadThreads(int value) {
+  public static void setMaxDownloadThreads(Context context, int value) {
     AdaptingThreadPoolExecutor.setMaxThreads(value);
   }
 
@@ -127,8 +149,8 @@ public class WebImage {
    * Cancel all pending requests. The parent activity should call this method when it is about
    * to be stopped or paused, or else you will waste resources by running in the background.
    */
-  public static void cancelAllRequests() {
-    ImageLoader.cancelAllRequests();
+  public static void cancelAllRequests(Context context) {
+    getLoader(context).cancelAllRequests();
   }
 
   /**
@@ -140,7 +162,7 @@ public class WebImage {
    * @param context Activity's context
    */
   public static void onNetworkStatusChanged(Context context) {
-    ImageLoader.getInstance(context).getDownloadExecutor().resizeThreadPool();
+    getLoader(context).getDownloadExecutor().resizeThreadPool();
   }
 
   /**
@@ -148,7 +170,7 @@ public class WebImage {
    * the app is paused to free up additional resources. Note that the next request to load an
    * image will re-inialize the thread pool.
    */
-  public static void shutdown() {
-    ImageLoader.shutdown();
+  public static void shutdown(Context context) {
+    getLoader(context).shutdown();
   }
 }

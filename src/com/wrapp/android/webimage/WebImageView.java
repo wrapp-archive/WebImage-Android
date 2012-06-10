@@ -118,7 +118,7 @@ public class WebImageView extends ImageView implements ImageRequest.Listener {
     loadedImageUrl = null;
     pendingImageUrl = request.imageUrl;
     
-    ImageLoader.load(getContext(), request, this);
+    WebImage.load(getContext(), request, this);
   }
 
   /**

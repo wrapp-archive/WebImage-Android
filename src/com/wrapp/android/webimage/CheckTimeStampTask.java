@@ -35,7 +35,7 @@ public class CheckTimeStampTask implements Runnable {
         LogWrapper.logMessage("Cached version of " + request.imageUrl.toString() + " found, but has expired.");
         cacheFile.delete();
         
-        ImageLoader.getInstance(context).forceUpdateImage(request);
+        WebImage.getLoader(context).forceUpdateImage(request);
       }
     } catch (IOException e) {
       Log.e("WebImage", "Could not check timestamp", e);

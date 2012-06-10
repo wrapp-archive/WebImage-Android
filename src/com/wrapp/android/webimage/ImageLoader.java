@@ -14,8 +14,6 @@ import com.wrapp.android.webimage.DispatchTask.NextTask;
 public class ImageLoader {
   private static final long SHUTDOWN_TIMEOUT_IN_MS = 100;
   
-  private static ImageLoader instance;
-
   private Context context;
   private Handler handler;
 
@@ -27,14 +25,6 @@ public class ImageLoader {
   
   private PendingRequests pendingRequests;
 
-  public static ImageLoader getInstance(Context context) {
-    if (instance == null) {
-      instance = new ImageLoader(context);
-    }
-
-    return instance;
-  }
-
   public ImageLoader(Context context) {
     this.context = context.getApplicationContext();
     handler = new Handler();
@@ -44,18 +34,6 @@ public class ImageLoader {
     createExecutors();
   }
 
-  public static void load(Context context, ImageRequest request, ImageRequest.Listener listener) {
-    getInstance(context).load(request, listener);
-  }
-
-  public static void cancelAllRequests() {
-    getInstance(null).cancelAllRequestsInternal();
-  }
-
-  public static void shutdown() {
-    getInstance(null).shutdownInternal();
-  }
-  
   AdaptingThreadPoolExecutor getDownloadExecutor() {
     return downloadExecutor;
   }
@@ -79,11 +57,11 @@ public class ImageLoader {
     downloadExecutor = new AdaptingThreadPoolExecutor(context);
   }
   
-  private void cancelAllRequestsInternal() {
+  public void cancelAllRequests() {
     pendingRequests.clear();
   }
   
-  private void shutdownInternal() {
+  public void shutdown() {
     LogWrapper.logMessage("Shutting down");
     try {
       dispatchExecutor.shutdownNow();
@@ -102,7 +80,7 @@ public class ImageLoader {
     createExecutors();
   }
 
-  private void load(ImageRequest request, ImageRequest.Listener listener) {
+  public void load(ImageRequest request, ImageRequest.Listener listener) {
     if (!pendingRequests.addRequest(request, listener)) {
       // Start with the dispatch task who checks to see if
       // the image is cached and then dispatches it
