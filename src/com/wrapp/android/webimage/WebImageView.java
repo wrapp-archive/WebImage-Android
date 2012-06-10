@@ -43,18 +43,9 @@ public class WebImageView extends ImageView implements ImageRequest.Listener {
   private int errorImageResId;
   private Drawable placeholderImage;
   private int placeholderImageResId;
-  private URL loadedImageUrl;
+  
   private URL pendingImageUrl;
-
-  private enum States {
-    EMPTY,
-    LOADING,
-    LOADED,
-    RELOADING,
-    CANCELLED,
-    ERROR,
-  }
-  private States currentState = States.EMPTY;
+  private URL loadedImageUrl;
 
   public interface Listener {
     public void onImageLoadStarted();
@@ -63,17 +54,14 @@ public class WebImageView extends ImageView implements ImageRequest.Listener {
     public void onImageLoadCancelled();
   }
 
-  @SuppressWarnings({"UnusedDeclaration"})
   public WebImageView(Context context) {
     super(context);
   }
 
-  @SuppressWarnings({"UnusedDeclaration"})
   public WebImageView(Context context, AttributeSet attrs) {
     super(context, attrs);
   }
 
-  @SuppressWarnings({"UnusedDeclaration"})
   public WebImageView(Context context, AttributeSet attrs, int defStyle) {
     super(context, attrs, defStyle);
   }
@@ -90,7 +78,6 @@ public class WebImageView extends ImageView implements ImageRequest.Listener {
    * Load an image asynchronously from the web
    * @param imageUrlString Image URL to download image from
    */
-  @SuppressWarnings("UnusedDeclaration")
   public void setImageUrl(String imageUrlString) {
     try {
       setImageUrl(new URL(imageUrlString));
@@ -104,7 +91,6 @@ public class WebImageView extends ImageView implements ImageRequest.Listener {
    * Load an image asynchronously from the web
    * @param imageUrl Image URL to download image from
    */
-  @SuppressWarnings("UnusedDeclaration")
   public void setImageUrl(URL imageUrl) {
     //noinspection NullableProblems
     setImageUrl(imageUrl, null, 0, 0);
@@ -122,15 +108,11 @@ public class WebImageView extends ImageView implements ImageRequest.Listener {
   public void setImageUrl(URL imageUrl, BitmapFactory.Options options, int errorImageResId, int placeholderImageResId) {
     if(imageUrl == null) {
       return;
-    }
-    else if(currentState == States.LOADED && imageUrl.equals(loadedImageUrl)) {
-      return;
-    }
-    else if(currentState == States.LOADING && imageUrl.equals(pendingImageUrl)) {
+    } else if (imageUrl.equals(loadedImageUrl)) {
+      // This url is already loaded
       return;
     }
 
-    currentState = States.LOADING;
     this.errorImageResId = errorImageResId;
     if(this.placeholderImageResId > 0) {
       setImageResource(this.placeholderImageResId);
@@ -144,7 +126,10 @@ public class WebImageView extends ImageView implements ImageRequest.Listener {
     if(this.listener != null) {
       listener.onImageLoadStarted();
     }
+    
+    loadedImageUrl = null;
     pendingImageUrl = imageUrl;
+    
     ImageLoader.load(getContext(), imageUrl, this, options);
   }
 
@@ -159,27 +144,21 @@ public class WebImageView extends ImageView implements ImageRequest.Listener {
    *
    * @param response Request response
    */
-  public void onBitmapLoaded(final ImageRequest request, final Bitmap bitmap) {
+  public void onBitmapLoaded(final ImageRequest request, Bitmap bitmap) {
     if(request.imageUrl.equals(pendingImageUrl)) {
-      LogWrapper.logMessage("WebImageView settinge image: " + pendingImageUrl);
-      if (bitmap != null) {
-        setImageBitmap(bitmap);
-        currentState = States.LOADED;
-        loadedImageUrl = request.imageUrl;
-        pendingImageUrl = null;
-        if (listener != null) {
-          listener.onImageLoadComplete();
-        }
+      loadedImageUrl = pendingImageUrl;
+      pendingImageUrl = null;
+      
+      setImageBitmap(bitmap);
+      if (listener != null) {
+        listener.onImageLoadComplete();
       }
-    }
-    else {
-      LogWrapper.logMessage("WebImageView dropping image: " + request.imageUrl + ", waiting for: " + pendingImageUrl
-          + " and having state " + currentState);
+    } else {
+      LogWrapper.logMessage("WebImageView dropping image: " + request.imageUrl + ", waiting for: " + pendingImageUrl);
       
       if(listener != null) {
         listener.onImageLoadCancelled();
       }
-      currentState = States.CANCELLED;
     }
   }
 
@@ -189,7 +168,6 @@ public class WebImageView extends ImageView implements ImageRequest.Listener {
    * @param message Error message (non-localized)
    */
   public void onBitmapLoadError(String message) {
-    currentState = States.ERROR;
     LogWrapper.logMessage(message);
     // In case of error, lazily load the drawable here
     if (errorImageResId > 0) {
@@ -206,7 +184,8 @@ public class WebImageView extends ImageView implements ImageRequest.Listener {
   @Override
   protected void onWindowVisibilityChanged(int visibility) {
     super.onWindowVisibilityChanged(visibility);
-    if(visibility == VISIBLE && currentState == States.LOADING) {
+    
+    if(visibility == VISIBLE) {
       setImageUrl(pendingImageUrl);
     }
   }
@@ -217,28 +196,23 @@ public class WebImageView extends ImageView implements ImageRequest.Listener {
    * reason it is recommended not to do so much work in this method.
    */
   public void onBitmapLoadCancelled() {
-    currentState = States.CANCELLED;
     if(listener != null) {
       listener.onImageLoadCancelled();
     }
   }
 
-  @SuppressWarnings("UnusedDeclaration")
   public void setErrorImageResId(int errorImageResId) {
     this.errorImageResId = errorImageResId;
   }
 
-  @SuppressWarnings("UnusedDeclaration")
   public void setErrorImage(Drawable errorImage) {
     this.errorImage = errorImage;
   }
 
-  @SuppressWarnings("UnusedDeclaration")
   public void setPlaceholderImage(Drawable placeholderImage) {
     this.placeholderImage = placeholderImage;
   }
 
-  @SuppressWarnings("UnusedDeclaration")
   public void setPlaceholderImageResId(int placeholderImageResId) {
     this.placeholderImageResId = placeholderImageResId;
   }
