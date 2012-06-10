@@ -31,6 +31,8 @@ class PendingRequests {
     ImageRequest pendingRequest = pendingListeners.get(listener);
     if (request.equals(pendingRequest)) {
       // We are already pending for this request, do nothing
+      listener.onBitmapLoadCancelled();
+      
       return true;
     } else if (pendingRequest != null) {
       // This listener is pending for another request, remove us from it
