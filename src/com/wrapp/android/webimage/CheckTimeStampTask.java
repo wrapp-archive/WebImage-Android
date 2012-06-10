@@ -33,7 +33,7 @@ public class CheckTimeStampTask implements Runnable {
       LogWrapper.logMessage("Cached version of " + request.imageUrl.toString() + " found, but has expired.");
       cacheFile.delete();
       
-      ImageLoader.getInstance(context).forceUpdateImage(request.imageUrl, request.loadOptions);
+      ImageLoader.getInstance(context).forceUpdateImage(request);
     }
   }
 }

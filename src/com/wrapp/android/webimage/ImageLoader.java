@@ -68,12 +68,12 @@ public class ImageLoader {
     checkTimestampExecutor.submit(new CheckTimeStampTask(context, request));
   }
   
-  void forceUpdateImage(URL url, BitmapFactory.Options options) {
+  void forceUpdateImage(ImageRequest request) {
     // TODO: Actually let this update the view
-    ImageRequest request = new ImageRequest(url, options);
-    request.forceDownload = true;
+    ImageRequest newRequest = new ImageRequest(request.imageUrl, request.bitmapLoader);
+    newRequest.forceDownload = true;
     
-    downloadExecutor.submit(new DownloadTask(context, request));
+    downloadExecutor.submit(new DownloadTask(context, newRequest));
   }
   
   private void createExecutors() {
@@ -107,7 +107,7 @@ public class ImageLoader {
   }
 
   private void load(URL imageUrl, ImageRequest.Listener listener, BitmapFactory.Options options) {
-    ImageRequest request = new ImageRequest(imageUrl, options);
+    ImageRequest request = new ImageRequest(imageUrl, new StandardBitmapLoader(options));
     
     if (!pendingRequests.addRequest(request, listener)) {
       // Start with the dispatch task who checks to see if
