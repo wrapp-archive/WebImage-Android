@@ -21,13 +21,11 @@
 
 package com.wrapp.android.webimage;
 
-import java.net.URL;
-
 import android.graphics.Bitmap;
 
 public final class ImageRequest {
   public String imageKey;
-  public URL imageUrl;
+  public String imageUrl;
   public BitmapLoader bitmapLoader;
   public boolean forceDownload = false;
 
@@ -36,8 +34,14 @@ public final class ImageRequest {
     public void onBitmapLoadError(String message);
     public void onBitmapLoadCancelled();
   }
+  
+  public ImageRequest(String imageUrl) {
+    this.imageKey = ImageCache.getCacheKeyForUrl(imageUrl);
+    this.imageUrl = imageUrl;
+    bitmapLoader = new StandardBitmapLoader();
+  }
 
-  public ImageRequest(URL imageUrl, BitmapLoader bitmapLoader) {
+  public ImageRequest(String imageUrl, BitmapLoader bitmapLoader) {
     this.imageKey = ImageCache.getCacheKeyForUrl(imageUrl);
     this.imageUrl = imageUrl;
     this.bitmapLoader = bitmapLoader;

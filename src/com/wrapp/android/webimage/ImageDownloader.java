@@ -25,7 +25,6 @@ import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
@@ -55,7 +54,7 @@ public class ImageDownloader {
   private static final int DEFAULT_BUFFER_SIZE = 8192;
   private static String userAgent = null;
 
-  public static boolean loadImage(Context context, String imageKey, URL imageUrl) throws IOException {
+  public static boolean loadImage(Context context, String imageKey, String imageUrl) throws IOException {
     HttpClient client = createHttpClient(getUserAgent());
     
     try {
@@ -98,14 +97,13 @@ public class ImageDownloader {
     }
   }
   
-  public static Date getServerTimestamp(URL imageUrl) throws IOException {
+  public static Date getServerTimestamp(String imageUrl) throws IOException {
     HttpClient client = createHttpClient(getUserAgent());
     
     try {
-      String url = imageUrl.toString();
-      LogWrapper.logMessage("Requesting image " + url);
+      LogWrapper.logMessage("Requesting image " + imageUrl);
       
-      HttpResponse response = client.execute(new HttpHead(url));
+      HttpResponse response = client.execute(new HttpHead(imageUrl));
       
       Header[] header = response.getHeaders("Expires");
       

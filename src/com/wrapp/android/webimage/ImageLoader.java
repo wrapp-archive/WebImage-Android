@@ -1,13 +1,11 @@
 package com.wrapp.android.webimage;
 
-import java.net.URL;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import android.content.Context;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.os.Handler;
 import android.util.Log;
 
@@ -46,8 +44,8 @@ public class ImageLoader {
     createExecutors();
   }
 
-  public static void load(Context context, URL imageUrl, ImageRequest.Listener listener, BitmapFactory.Options options) {
-    getInstance(context).load(imageUrl, listener, options);
+  public static void load(Context context, ImageRequest request, ImageRequest.Listener listener) {
+    getInstance(context).load(request, listener);
   }
 
   public static void cancelAllRequests() {
@@ -104,9 +102,7 @@ public class ImageLoader {
     createExecutors();
   }
 
-  private void load(URL imageUrl, ImageRequest.Listener listener, BitmapFactory.Options options) {
-    ImageRequest request = new ImageRequest(imageUrl, new StandardBitmapLoader(options));
-    
+  private void load(ImageRequest request, ImageRequest.Listener listener) {
     if (!pendingRequests.addRequest(request, listener)) {
       // Start with the dispatch task who checks to see if
       // the image is cached and then dispatches it

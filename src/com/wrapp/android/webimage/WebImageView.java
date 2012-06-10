@@ -21,9 +21,6 @@
 
 package com.wrapp.android.webimage;
 
-import java.net.MalformedURLException;
-import java.net.URL;
-
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -44,8 +41,8 @@ public class WebImageView extends ImageView implements ImageRequest.Listener {
   private Drawable placeholderImage;
   private int placeholderImageResId;
   
-  private URL pendingImageUrl;
-  private URL loadedImageUrl;
+  private String pendingImageUrl;
+  private String loadedImageUrl;
 
   public interface Listener {
     public void onImageLoadStarted();
@@ -76,26 +73,12 @@ public class WebImageView extends ImageView implements ImageRequest.Listener {
 
   /**
    * Load an image asynchronously from the web
-   * @param imageUrlString Image URL to download image from
-   */
-  public void setImageUrl(String imageUrlString) {
-    try {
-      setImageUrl(new URL(imageUrlString));
-    }
-    catch(MalformedURLException e) {
-      LogWrapper.logException(e);
-    }
-  }
-
-  /**
-   * Load an image asynchronously from the web
    * @param imageUrl Image URL to download image from
    */
-  public void setImageUrl(URL imageUrl) {
-    //noinspection NullableProblems
+  public final void setImageUrl(String imageUrl) {
     setImageUrl(imageUrl, null, 0, 0);
   }
-
+  
   /**
    * Load an image asynchronously from the web
    * @param imageUrl Image URL to download image from
@@ -105,10 +88,15 @@ public class WebImageView extends ImageView implements ImageRequest.Listener {
    * will be displayed on error.
    * @param placeholderImageResId Resource ID to set for placeholder image while image is loading.
    */
-  public void setImageUrl(URL imageUrl, BitmapFactory.Options options, int errorImageResId, int placeholderImageResId) {
-    if(imageUrl == null) {
+  public void setImageUrl(String imageUrl, BitmapFactory.Options options, int errorImageResId, int placeholderImageResId) {
+    setImageUrl(new ImageRequest(imageUrl, new StandardBitmapLoader(options)), errorImageResId, placeholderImageResId);
+  }
+
+
+  protected void setImageUrl(ImageRequest request, int errorImageResId, int placeholderImageResId) {
+    if(request.imageUrl == null) {
       return;
-    } else if (imageUrl.equals(loadedImageUrl)) {
+    } else if (request.imageUrl.equals(loadedImageUrl)) {
       // This url is already loaded
       return;
     }
@@ -128,9 +116,9 @@ public class WebImageView extends ImageView implements ImageRequest.Listener {
     }
     
     loadedImageUrl = null;
-    pendingImageUrl = imageUrl;
+    pendingImageUrl = request.imageUrl;
     
-    ImageLoader.load(getContext(), imageUrl, this, options);
+    ImageLoader.load(getContext(), request, this);
   }
 
   /**
@@ -144,7 +132,8 @@ public class WebImageView extends ImageView implements ImageRequest.Listener {
    *
    * @param response Request response
    */
-  public void onBitmapLoaded(final ImageRequest request, Bitmap bitmap) {
+  @Override
+  public void onBitmapLoaded(ImageRequest request, Bitmap bitmap) {
     if(request.imageUrl.equals(pendingImageUrl)) {
       loadedImageUrl = pendingImageUrl;
       pendingImageUrl = null;
@@ -167,6 +156,7 @@ public class WebImageView extends ImageView implements ImageRequest.Listener {
    * to react to these events, you should override onImageError() instead.
    * @param message Error message (non-localized)
    */
+  @Override
   public void onBitmapLoadError(String message) {
     LogWrapper.logMessage(message);
     // In case of error, lazily load the drawable here
@@ -195,6 +185,7 @@ public class WebImageView extends ImageView implements ImageRequest.Listener {
    * of reasons, including the activity being closed or scrolling rapidly in a ListView. For this
    * reason it is recommended not to do so much work in this method.
    */
+  @Override
   public void onBitmapLoadCancelled() {
     if(listener != null) {
       listener.onImageLoadCancelled();

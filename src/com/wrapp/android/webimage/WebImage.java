@@ -24,10 +24,7 @@ package com.wrapp.android.webimage;
 import android.content.Context;
 import android.graphics.BitmapFactory;
 
-import java.net.URL;
-
 /** Endpoint class for all main library tasks. */
-@SuppressWarnings({"UnusedDeclaration"})
 public class WebImage {
   // Loading Images ////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -39,8 +36,8 @@ public class WebImage {
    * @param imageUrl URL to load the image from
    * @param listener Object which will be notified when the request is complete
    */
-  public static void load(final Context context, URL imageUrl, ImageRequest.Listener listener) {
-    ImageLoader.load(context, imageUrl, listener, null);
+  public static void load(final Context context, String imageUrl, ImageRequest.Listener listener) {
+    ImageLoader.load(context, new ImageRequest(imageUrl), listener);
   }
 
   /**
@@ -53,8 +50,8 @@ public class WebImage {
    * @param options Options to use when loading the image. See the documentation for {@link BitmapFactory.Options}
    * for more details. Can be null.
    */
-  public static void load(final Context context, URL imageUrl, ImageRequest.Listener listener, BitmapFactory.Options options) {
-    ImageLoader.load(context, imageUrl, listener, options);
+  public static void load(final Context context, String imageUrl, ImageRequest.Listener listener, BitmapFactory.Options options) {
+    ImageLoader.load(context, new ImageRequest(imageUrl, new StandardBitmapLoader(options)), listener);
   }
 
   // Image Cache Operations ////////////////////////////////////////////////////////////////////////////////////////////
@@ -67,7 +64,7 @@ public class WebImage {
    * @param imageUrl URL to check
    * @return True if the image is in the file cache, false otherwise
    */
-  public static boolean isImageCached(final Context context, URL imageUrl) {
+  public static boolean isImageCached(Context context, String imageUrl) {
     return ImageCache.isImageCached(context, ImageCache.getCacheKeyForUrl(imageUrl));
   }
 
@@ -86,7 +83,7 @@ public class WebImage {
    * @param context Context used for getting app's package name
    * @param cacheAgeInSec Maximum age of file, in seconds
    */
-  public static void clearOldCacheFiles(final Context context, long cacheAgeInSec) {
+  public static void clearOldCacheFiles(Context context, long cacheAgeInSec) {
     ImageCache.clearOldCacheFiles(context, cacheAgeInSec);
   }
 
@@ -95,7 +92,7 @@ public class WebImage {
    * @param context Context used for getting app's package name
    * @param imageUrl Image URL to remove
    */
-  public static void clearImageFromCaches(final Context context, final URL imageUrl) {
+  public static void clearImageFromCaches(Context context, String imageUrl) {
     ImageCache.clearImageFromCaches(context, imageUrl);
   }
 
