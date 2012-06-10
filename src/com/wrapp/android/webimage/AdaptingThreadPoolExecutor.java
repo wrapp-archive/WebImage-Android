@@ -34,8 +34,6 @@ class AdaptingThreadPoolExecutor extends ThreadPoolExecutor {
     
     connectivityReceiver = new ConnectivityChangeReceiver();
     context.registerReceiver(connectivityReceiver,  new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION));
-    
-    resizeThreadPool();
   }
 
   @Override
