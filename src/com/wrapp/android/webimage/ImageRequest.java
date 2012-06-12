@@ -21,30 +21,59 @@
 
 package com.wrapp.android.webimage;
 
-import android.content.Context;
-import android.graphics.BitmapFactory;
-
-import java.net.URL;
+import android.graphics.Bitmap;
 
 public final class ImageRequest {
-  public Context context;
   public String imageKey;
-  public URL imageUrl;
-  public Listener listener;
-  public BitmapFactory.Options loadOptions;
+  public String imageUrl;
+  public BitmapLoader bitmapLoader;
   public boolean forceDownload = false;
 
   public interface Listener {
-    public void onBitmapLoaded(final RequestResponse requestResponse);
+    public void onBitmapLoaded(ImageRequest request, Bitmap bitmap);
     public void onBitmapLoadError(String message);
     public void onBitmapLoadCancelled();
   }
-
-  public ImageRequest(final Context context, URL imageUrl, Listener listener, BitmapFactory.Options options) {
-    this.context = context;
+  
+  public ImageRequest(String imageUrl) {
     this.imageKey = ImageCache.getCacheKeyForUrl(imageUrl);
     this.imageUrl = imageUrl;
-    this.listener = listener;
-    this.loadOptions = options;
+    bitmapLoader = new StandardBitmapLoader();
+  }
+
+  public ImageRequest(String imageUrl, BitmapLoader bitmapLoader) {
+    this.imageKey = ImageCache.getCacheKeyForUrl(imageUrl);
+    this.imageUrl = imageUrl;
+    this.bitmapLoader = bitmapLoader;
+  }
+
+  @Override
+  public int hashCode() {
+    final int prime = 31;
+    int result = 1;
+    result = prime * result + ((imageUrl == null) ? 0 : imageUrl.hashCode());
+    return result;
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (this == obj) {
+      return true;
+    }
+    if (obj == null) {
+      return false;
+    }
+    if (!(obj instanceof ImageRequest)) {
+      return false;
+    }
+    ImageRequest other = (ImageRequest) obj;
+    if (imageUrl == null) {
+      if (other.imageUrl != null) {
+        return false;
+      }
+    } else if (!imageUrl.equals(other.imageUrl)) {
+      return false;
+    }
+    return true;
   }
 }

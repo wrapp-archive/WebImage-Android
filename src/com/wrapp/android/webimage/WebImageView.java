@@ -25,19 +25,14 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.drawable.Drawable;
-import android.os.Handler;
 import android.util.AttributeSet;
 import android.widget.ImageView;
-
-import java.net.MalformedURLException;
-import java.net.URL;
 
 /**
  * ImageView successor class which can load images asynchronously from the web. This class
  * is safe to use in ListAdapters or views which may trigger many simultaneous requests.
  */
 public class WebImageView extends ImageView implements ImageRequest.Listener {
-  Handler uiHandler;
   private Listener listener;
   // Save both a Drawable and int here. If the user wants to pass a resource ID, we can load
   // this lazily and save a bit of memory.
@@ -45,18 +40,9 @@ public class WebImageView extends ImageView implements ImageRequest.Listener {
   private int errorImageResId;
   private Drawable placeholderImage;
   private int placeholderImageResId;
-  private URL loadedImageUrl;
-  private URL pendingImageUrl;
-
-  private enum States {
-    EMPTY,
-    LOADING,
-    LOADED,
-    RELOADING,
-    CANCELLED,
-    ERROR,
-  }
-  private States currentState = States.EMPTY;
+  
+  private String pendingImageUrl;
+  private String loadedImageUrl;
 
   public interface Listener {
     public void onImageLoadStarted();
@@ -65,26 +51,16 @@ public class WebImageView extends ImageView implements ImageRequest.Listener {
     public void onImageLoadCancelled();
   }
 
-  @SuppressWarnings({"UnusedDeclaration"})
   public WebImageView(Context context) {
     super(context);
-    initialize();
   }
 
-  @SuppressWarnings({"UnusedDeclaration"})
   public WebImageView(Context context, AttributeSet attrs) {
     super(context, attrs);
-    initialize();
   }
 
-  @SuppressWarnings({"UnusedDeclaration"})
   public WebImageView(Context context, AttributeSet attrs, int defStyle) {
     super(context, attrs, defStyle);
-    initialize();
-  }
-
-  private void initialize() {
-    uiHandler = new Handler();
   }
 
   /**
@@ -97,28 +73,12 @@ public class WebImageView extends ImageView implements ImageRequest.Listener {
 
   /**
    * Load an image asynchronously from the web
-   * @param imageUrlString Image URL to download image from
-   */
-  @SuppressWarnings("UnusedDeclaration")
-  public void setImageUrl(String imageUrlString) {
-    try {
-      setImageUrl(new URL(imageUrlString));
-    }
-    catch(MalformedURLException e) {
-      LogWrapper.logException(e);
-    }
-  }
-
-  /**
-   * Load an image asynchronously from the web
    * @param imageUrl Image URL to download image from
    */
-  @SuppressWarnings("UnusedDeclaration")
-  public void setImageUrl(URL imageUrl) {
-    //noinspection NullableProblems
+  public final void setImageUrl(String imageUrl) {
     setImageUrl(imageUrl, null, 0, 0);
   }
-
+  
   /**
    * Load an image asynchronously from the web
    * @param imageUrl Image URL to download image from
@@ -128,18 +88,19 @@ public class WebImageView extends ImageView implements ImageRequest.Listener {
    * will be displayed on error.
    * @param placeholderImageResId Resource ID to set for placeholder image while image is loading.
    */
-  public void setImageUrl(URL imageUrl, BitmapFactory.Options options, int errorImageResId, int placeholderImageResId) {
-    if(imageUrl == null) {
+  public void setImageUrl(String imageUrl, BitmapFactory.Options options, int errorImageResId, int placeholderImageResId) {
+    setImageUrl(new ImageRequest(imageUrl, new StandardBitmapLoader(options)), errorImageResId, placeholderImageResId);
+  }
+
+
+  protected void setImageUrl(ImageRequest request, int errorImageResId, int placeholderImageResId) {
+    if(request.imageUrl == null) {
       return;
-    }
-    else if(currentState == States.LOADED && imageUrl.equals(loadedImageUrl)) {
-      return;
-    }
-    else if(currentState == States.LOADING && imageUrl.equals(pendingImageUrl)) {
+    } else if (request.imageUrl.equals(loadedImageUrl)) {
+      // This url is already loaded
       return;
     }
 
-    currentState = States.LOADING;
     this.errorImageResId = errorImageResId;
     if(this.placeholderImageResId > 0) {
       setImageResource(this.placeholderImageResId);
@@ -153,8 +114,11 @@ public class WebImageView extends ImageView implements ImageRequest.Listener {
     if(this.listener != null) {
       listener.onImageLoadStarted();
     }
-    pendingImageUrl = imageUrl;
-    ImageLoader.load(getContext(), imageUrl, this, options);
+    
+    loadedImageUrl = null;
+    pendingImageUrl = request.imageUrl;
+    
+    WebImage.load(getContext(), request, this);
   }
 
   /**
@@ -168,33 +132,22 @@ public class WebImageView extends ImageView implements ImageRequest.Listener {
    *
    * @param response Request response
    */
-  public void onBitmapLoaded(final RequestResponse response) {
-    if(response.originalRequest.imageUrl.equals(pendingImageUrl)) {
-      postToGuiThread(new Runnable() {
-        public void run() {
-          final Bitmap bitmap = response.bitmapReference.get();
-          if(bitmap != null) {
-            setImageBitmap(bitmap);
-            currentState = States.LOADED;
-            loadedImageUrl = response.originalRequest.imageUrl;
-            pendingImageUrl = null;
-            if(listener != null) {
-              listener.onImageLoadComplete();
-            }
-          }
-          else {
-            // The garbage collecter has cleaned up this bitmap by now (yes, that does happen), so re-issue the request
-            ImageLoader.load(getContext(), response.originalRequest.imageUrl, response.originalRequest.listener, response.originalRequest.loadOptions);
-            currentState = States.RELOADING;
-          }
-        }
-      });
-    }
-    else {
+  @Override
+  public void onBitmapLoaded(ImageRequest request, Bitmap bitmap) {
+    if(request.imageUrl.equals(pendingImageUrl)) {
+      loadedImageUrl = pendingImageUrl;
+      pendingImageUrl = null;
+      
+      setImageBitmap(bitmap);
+      if (listener != null) {
+        listener.onImageLoadComplete();
+      }
+    } else {
+      LogWrapper.logMessage("WebImageView dropping image: " + request.imageUrl + ", waiting for: " + pendingImageUrl);
+      
       if(listener != null) {
         listener.onImageLoadCancelled();
       }
-      currentState = States.CANCELLED;
     }
   }
 
@@ -203,20 +156,16 @@ public class WebImageView extends ImageView implements ImageRequest.Listener {
    * to react to these events, you should override onImageError() instead.
    * @param message Error message (non-localized)
    */
+  @Override
   public void onBitmapLoadError(String message) {
-    currentState = States.ERROR;
     LogWrapper.logMessage(message);
-    postToGuiThread(new Runnable() {
-      public void run() {
-        // In case of error, lazily load the drawable here
-        if(errorImageResId > 0) {
-          errorImage = getResources().getDrawable(errorImageResId);
-        }
-        if(errorImage != null) {
-          setImageDrawable(errorImage);
-        }
-      }
-    });
+    // In case of error, lazily load the drawable here
+    if (errorImageResId > 0) {
+      errorImage = getResources().getDrawable(errorImageResId);
+    }
+    if (errorImage != null) {
+      setImageDrawable(errorImage);
+    }
     if(listener != null) {
       listener.onImageLoadError();
     }
@@ -225,7 +174,8 @@ public class WebImageView extends ImageView implements ImageRequest.Listener {
   @Override
   protected void onWindowVisibilityChanged(int visibility) {
     super.onWindowVisibilityChanged(visibility);
-    if(visibility == VISIBLE && currentState == States.LOADING) {
+    
+    if(visibility == VISIBLE) {
       setImageUrl(pendingImageUrl);
     }
   }
@@ -235,38 +185,25 @@ public class WebImageView extends ImageView implements ImageRequest.Listener {
    * of reasons, including the activity being closed or scrolling rapidly in a ListView. For this
    * reason it is recommended not to do so much work in this method.
    */
+  @Override
   public void onBitmapLoadCancelled() {
-    currentState = States.CANCELLED;
     if(listener != null) {
       listener.onImageLoadCancelled();
     }
   }
 
-  /**
-   * Post a message to the GUI thread. This should be used for updating the component from
-   * background tasks.
-   * @param runnable Runnable task
-   */
-  public final void postToGuiThread(Runnable runnable) {
-    uiHandler.post(runnable);
-  }
-
-  @SuppressWarnings("UnusedDeclaration")
   public void setErrorImageResId(int errorImageResId) {
     this.errorImageResId = errorImageResId;
   }
 
-  @SuppressWarnings("UnusedDeclaration")
   public void setErrorImage(Drawable errorImage) {
     this.errorImage = errorImage;
   }
 
-  @SuppressWarnings("UnusedDeclaration")
   public void setPlaceholderImage(Drawable placeholderImage) {
     this.placeholderImage = placeholderImage;
   }
 
-  @SuppressWarnings("UnusedDeclaration")
   public void setPlaceholderImageResId(int placeholderImageResId) {
     this.placeholderImageResId = placeholderImageResId;
   }
