@@ -131,7 +131,12 @@ class PendingRequests {
         // No other listeners, cancel this task
         // It doesn't matter if we successfully cancel it, if we don't
         // then it will be ignored in the callback anyways
-        future.cancel(true);
+        
+        // We could interrupt the thread here to have it cancel a possible
+        // download, however this is not really wanted as the image will probably
+        // be needed at a later point, also there seems to be a possibility of a deadlock
+        // for some reason at java.nio.channels.spi.AbstractInterruptibleChannel.close(AbstractInterruptibleChannel.java:~77)
+        future.cancel(false);
         
         return false;
       } else {
