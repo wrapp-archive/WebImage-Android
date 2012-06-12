@@ -31,8 +31,6 @@ class PendingRequests {
     ImageRequest pendingRequest = pendingListeners.get(listener);
     if (request.equals(pendingRequest)) {
       // We are already pending for this request, do nothing
-      listener.onBitmapLoadCancelled();
-      
       return true;
     } else if (pendingRequest != null) {
       // This listener is pending for another request, remove us from it
@@ -76,10 +74,15 @@ class PendingRequests {
 
   public void clear() {
     for (Map.Entry<ImageRequest, PendingTask> entry : pendingTasks.entrySet()) {
-      entry.getValue().future.cancel(false);
+      PendingTask task = entry.getValue();
+      task.future.cancel(false);
+      
+      // Notify that we were actually cancelled
+      for (ImageRequest.Listener listener : task.listeners) {
+        listener.onBitmapLoadCancelled();
+      }
     }
 
-    // TODO: We should call the correct callbacks
     pendingTasks.clear();
     pendingListeners.clear();
   }
@@ -128,13 +131,9 @@ class PendingRequests {
         // then it will be ignored in the callback anyways
         future.cancel(true);
         
-        listener.onBitmapLoadCancelled();
-        
         return false;
       } else {
         // Task is still pending for others
-        listener.onBitmapLoadCancelled();
-        
         return true;
       }
     }
