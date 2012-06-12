@@ -28,6 +28,7 @@ import android.content.Context;
 import android.os.Bundle;
 import android.os.Debug;
 import android.os.Handler;
+import android.os.StrictMode;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -65,6 +66,11 @@ public class WebImageListActivity extends ListActivity implements WebImageView.L
     super.onCreate(savedInstanceState);
     requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
     setContentView(R.layout.web_image_activity);
+    
+    if (BuildConfig.DEBUG) {
+      StrictMode.setThreadPolicy(new StrictMode.ThreadPolicy.Builder().detectAll().build());
+      StrictMode.setVmPolicy(new StrictMode.VmPolicy.Builder().detectAll().build());
+    }
 
     // Remove all images from the cache when starting up
     WebImage.clearOldCacheFiles(this);
@@ -90,8 +96,8 @@ public class WebImageListActivity extends ListActivity implements WebImageView.L
   @Override
   protected void onResume() {
     super.onResume();
-    connectivityChangeReceiver = new DownloadThreadPool.ConnectivityChangeReceiver();
-    registerReceiver(connectivityChangeReceiver, DownloadThreadPool.ConnectivityChangeReceiver.getIntentFilter());
+    //connectivityChangeReceiver = new DownloadThreadPool.ConnectivityChangeReceiver();
+    //registerReceiver(connectivityChangeReceiver, DownloadThreadPool.ConnectivityChangeReceiver.getIntentFilter());
   }
 
   /**
@@ -101,7 +107,6 @@ public class WebImageListActivity extends ListActivity implements WebImageView.L
   @Override
   protected void onPause() {
     super.onPause();
-    unregisterReceiver(connectivityChangeReceiver);
     WebImage.cancelAllRequests(this);
   }
 
