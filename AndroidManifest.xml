@@ -24,7 +24,11 @@
       package="com.wrapp.android.webimage"
       android:versionCode="1"
       android:versionName="1.0">
-    <application>
       
-    </application>
+    <!-- SDK version, currently 2.1 or better -->
+    <uses-sdk android:minSdkVersion="7" android:targetSdkVersion="15" />
+
+	<application>
+	</application>
+
 </manifest> 
