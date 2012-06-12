@@ -28,6 +28,7 @@ import android.content.Context;
 import android.os.Bundle;
 import android.os.Debug;
 import android.os.Handler;
+import android.os.StrictMode;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -65,6 +66,11 @@ public class WebImageListActivity extends ListActivity implements WebImageView.L
     super.onCreate(savedInstanceState);
     requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
     setContentView(R.layout.web_image_activity);
+    
+    if (BuildConfig.DEBUG) {
+      StrictMode.setThreadPolicy(new StrictMode.ThreadPolicy.Builder().detectAll().build());
+      StrictMode.setVmPolicy(new StrictMode.VmPolicy.Builder().detectAll().build());
+    }
 
     // Remove all images from the cache when starting up
     WebImage.clearOldCacheFiles(this);
@@ -90,8 +96,8 @@ public class WebImageListActivity extends ListActivity implements WebImageView.L
   @Override
   protected void onResume() {
     super.onResume();
-    connectivityChangeReceiver = new DownloadThreadPool.ConnectivityChangeReceiver();
-    registerReceiver(connectivityChangeReceiver, DownloadThreadPool.ConnectivityChangeReceiver.getIntentFilter());
+    //connectivityChangeReceiver = new DownloadThreadPool.ConnectivityChangeReceiver();
+    //registerReceiver(connectivityChangeReceiver, DownloadThreadPool.ConnectivityChangeReceiver.getIntentFilter());
   }
 
   /**
@@ -101,15 +107,14 @@ public class WebImageListActivity extends ListActivity implements WebImageView.L
   @Override
   protected void onPause() {
     super.onPause();
-    WebImage.cancelAllRequests();
-    unregisterReceiver(connectivityChangeReceiver);
+    WebImage.cancelAllRequests(this);
   }
 
   @Override
   protected void onStop() {
     super.onStop();
     LogWrapper.logMessage("Stopping activity");
-    WebImage.shutdown();
+    WebImage.shutdown(this);
   }
 
   @Override
@@ -126,7 +131,7 @@ public class WebImageListActivity extends ListActivity implements WebImageView.L
         refresh();
         break;
       case R.id.MainMenuClearCachesItem:
-        WebImage.cancelAllRequests();
+        WebImage.cancelAllRequests(this);
         WebImage.clearOldCacheFiles(this, 0);
         Toast toast = Toast.makeText(this, "Caches cleared", Toast.LENGTH_SHORT);
         toast.show();
@@ -198,7 +203,7 @@ public class WebImageListActivity extends ListActivity implements WebImageView.L
     final WebImageListAdapter webImageListAdapter = (WebImageListAdapter)getListAdapter();
     final boolean shouldRestrictMemoryUsage = !webImageListAdapter.getShouldRestrictMemoryUsage();
     webImageListAdapter.setShouldRestrictMemoryUsage(shouldRestrictMemoryUsage);
-    WebImage.cancelAllRequests();
+    WebImage.cancelAllRequests(this);
     WebImage.clearOldCacheFiles(this, 0);
     final String toastMessage = "Restrict memory usage: " + (shouldRestrictMemoryUsage ? "enabled" : "disabled");
     Toast toast = Toast.makeText(this, toastMessage, Toast.LENGTH_SHORT);

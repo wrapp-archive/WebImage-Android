@@ -1,83 +1,194 @@
-/*
- * Copyright (c) 2011 Bohemian Wrappsody AB
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy of
- * this software and associated documentation files (the "Software"), to deal in
- * the Software without restriction, including without limitation the rights to
- * use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
- * the Software, and to permit persons to whom the Software is furnished to do so,
- * subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
- * FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE AUTHORS OR
- * COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
- * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
- * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- */
-
 package com.wrapp.android.webimage;
 
-import android.content.Context;
-import android.graphics.BitmapFactory;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
-import java.net.URL;
+import android.content.Context;
+import android.graphics.Bitmap;
+import android.os.Handler;
+import android.util.Log;
+
+import com.wrapp.android.webimage.DispatchTask.NextTask;
 
 public class ImageLoader {
-  // Static singleton instance
-  private static ImageLoader staticInstance;
+  private static final long SHUTDOWN_TIMEOUT_IN_MS = 100;
+  
+  private Context context;
+  private Handler handler;
 
   // Worker threads for different tasks, ordered from fast -> slow
-  private RequestRouterThread requestRouterThread;
-  private FileLoaderThread fileLoaderThread;
-  private CheckTimestampThread checkTimestampThread;
-  private DownloadThreadPool downloadThreadPool;
+  private ExecutorService dispatchExecutor;
+  private ExecutorService fileLoaderExecutor;
+  private ExecutorService checkTimestampExecutor;
+  private AdaptingThreadPoolExecutor downloadExecutor;
+  
+  private PendingRequests pendingRequests;
 
-  public static ImageLoader getInstance(Context context) {
-    if(staticInstance == null) {
-      staticInstance = new ImageLoader(context);
-    }
-    return staticInstance;
+  public ImageLoader(Context context) {
+    this.context = context.getApplicationContext();
+    handler = new Handler();
+
+    pendingRequests = new PendingRequests();
+    
+    createExecutors();
   }
 
-  private ImageLoader(final Context context) {
-    fileLoaderThread = FileLoaderThread.getInstance();
-    fileLoaderThread.start();
-    checkTimestampThread = CheckTimestampThread.getInstance();
-    checkTimestampThread.start();
-    downloadThreadPool = DownloadThreadPool.getInstance();
-    downloadThreadPool.start(context);
-    requestRouterThread = RequestRouterThread.getInstance();
-    requestRouterThread.start();
+  AdaptingThreadPoolExecutor getDownloadExecutor() {
+    return downloadExecutor;
   }
-
-  public static void load(final Context context, URL imageUrl, ImageRequest.Listener listener, BitmapFactory.Options options) {
-    final ImageLoader instance = getInstance(context);
-    instance.requestRouterThread.addTask(new ImageRequest(context, imageUrl, listener, options));
+  
+  void checkTimeStamp(ImageRequest request) {
+    checkTimestampExecutor.submit(new CheckTimeStampTask(context, request));
   }
-
-  public static void cancelAllRequests() {
-    final ImageLoader imageLoader = getInstance(null);
-    imageLoader.requestRouterThread.cancelAllRequests();
-    imageLoader.fileLoaderThread.cancelAllRequests();
-    imageLoader.checkTimestampThread.cancelAllRequests();
-    imageLoader.downloadThreadPool.cancelAllRequests();
+  
+  void forceUpdateImage(ImageRequest request) {
+    // TODO: Actually let this update the view
+    ImageRequest newRequest = new ImageRequest(request.imageUrl, request.bitmapLoader);
+    newRequest.forceDownload = true;
+    
+    downloadExecutor.submit(new DownloadTask(context, newRequest));
   }
-
-  public static void shutdown() {
+  
+  private void createExecutors() {
+    dispatchExecutor = Executors.newSingleThreadExecutor(new PriorityThreadFactory(Thread.NORM_PRIORITY - 1));
+    fileLoaderExecutor = Executors.newSingleThreadExecutor(new PriorityThreadFactory(Thread.NORM_PRIORITY - 1));
+    checkTimestampExecutor = Executors.newSingleThreadExecutor(new PriorityThreadFactory(Thread.MIN_PRIORITY));
+    downloadExecutor = new AdaptingThreadPoolExecutor(context);
+  }
+  
+  public void cancelAllRequests() {
+    pendingRequests.clear();
+  }
+  
+  public void shutdown() {
     LogWrapper.logMessage("Shutting down");
-    final ImageLoader imageLoader = getInstance(null);
-    imageLoader.requestRouterThread.shutdown();
-    RequestRouterThread.staticInstance = null;
-    imageLoader.fileLoaderThread.shutdown();
-    FileLoaderThread.staticInstance = null;
-    imageLoader.checkTimestampThread.shutdown();
-    CheckTimestampThread.staticInstance = null;
-    imageLoader.downloadThreadPool.shutdown();
-    DownloadThreadPool.staticInstance = null;
-    staticInstance = null;
+    try {
+      dispatchExecutor.shutdownNow();
+      fileLoaderExecutor.shutdownNow();
+      checkTimestampExecutor.shutdownNow();
+      downloadExecutor.shutdownNow();
+      
+      pendingRequests.clear();
+      
+      downloadExecutor.awaitTermination(SHUTDOWN_TIMEOUT_IN_MS, TimeUnit.MILLISECONDS);
+    } catch (InterruptedException e) {
+      // Ignore
+    }
+    
+    // TODO: What are we supposed to do?
+    createExecutors();
+  }
+
+  public void load(ImageRequest request, ImageRequest.Listener listener) {
+    if (!pendingRequests.addRequest(request, listener)) {
+      // Start with the dispatch task who checks to see if
+      // the image is cached and then dispatches it
+      CallbackFuture<?> task = dispatchRequest(request);
+      
+      pendingRequests.addTask(request, listener, task);
+    }
+  }
+  
+  private CallbackFuture<?> dispatchRequest(ImageRequest request) {
+    CallbackFuture<DispatchTask.NextTask> task =
+        new CallbackFuture<DispatchTask.NextTask>(new DispatchTask(context, request), request, dispatchCallback, handler);
+    dispatchExecutor.submit(task);
+    
+    return task;
+  }
+
+  private CallbackFuture<?> loadFromUrl(ImageRequest request) {
+    CallbackFuture<Void> task = new CallbackFuture<Void>(new DownloadTask(context, request), request, downloadCallback, handler);
+    downloadExecutor.submit(task);
+    
+    return task;
+  }
+  
+  private CallbackFuture<?> loadFromDisk(ImageRequest request) {
+    CallbackFuture<Bitmap> task = new CallbackFuture<Bitmap>(new FileLoadTask(context, request), request, fileCallback, handler);
+    fileLoaderExecutor.submit(task);
+    
+    return task;
+  }
+  
+  private BaseCallback<DispatchTask.NextTask> dispatchCallback = new BaseCallback<DispatchTask.NextTask>() {
+    @Override
+    public void requestComplete(ImageRequest request, NextTask task) {
+      CallbackFuture<?> newFuture = null;
+      
+      switch (task) {
+        case FILE:
+          newFuture = loadFromDisk(request);
+          break;
+        case WEB:
+          newFuture = loadFromUrl(request);
+          break;
+      }
+      
+      pendingRequests.swapFuture(request,  newFuture);
+    }
+  };
+  
+  private BaseCallback<Void> downloadCallback = new BaseCallback<Void>() {
+    @Override
+    public void requestComplete(ImageRequest request, Void value) {
+      // Download completed, load from disk
+      CallbackFuture<?> newFuture = loadFromDisk(request);
+      pendingRequests.swapFuture(request, newFuture);
+    }
+  };
+  
+  private BaseCallback<Bitmap> fileCallback = new BaseCallback<Bitmap>() {
+    @Override
+    public void requestComplete(ImageRequest request, Bitmap b) {
+      // Bitmap was loaded from disk
+      for (ImageRequest.Listener listener : pendingRequests.getListeners(request)) {
+        listener.onBitmapLoaded(request, b);
+      }
+      
+      // We are done
+      pendingRequests.removeRequest(request);
+    }
+  };
+  
+  private abstract class BaseCallback<T> implements CallbackFuture.Callback<T> {
+    @Override
+    public void onSuccess(ImageRequest request, T value) {
+      if (!checkPending(request)) {
+        return;
+      }
+      
+      requestComplete(request, value);
+    }
+
+    @Override
+    public void onFailure(ImageRequest request, Throwable t) {
+      if (!checkPending(request)) {
+        return;
+      }
+      
+      Log.e("WebImage", "Failed to fetch image: " + request.imageUrl, t);
+
+      for (ImageRequest.Listener listener : pendingRequests.getListeners(request)) {
+        listener.onBitmapLoadError(t.getMessage());
+      }
+      
+      pendingRequests.removeRequest(request);
+    }
+    
+    private boolean checkPending(ImageRequest request) {
+      // Check if we are still interested in this request
+      if (!pendingRequests.isPending(request)) {
+        // No longer pending
+        LogWrapper.logMessage("Request no longer pending, dropping: " + request.imageUrl);
+        
+        return false;
+      } else {
+        return true;
+      }
+    }
+
+    public abstract void requestComplete(ImageRequest request, T value);
   }
 }

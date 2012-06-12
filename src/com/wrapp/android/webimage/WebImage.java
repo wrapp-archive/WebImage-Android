@@ -24,11 +24,18 @@ package com.wrapp.android.webimage;
 import android.content.Context;
 import android.graphics.BitmapFactory;
 
-import java.net.URL;
-
 /** Endpoint class for all main library tasks. */
-@SuppressWarnings({"UnusedDeclaration"})
 public class WebImage {
+  private static ImageLoader imageLoader;
+  
+  public static ImageLoader getLoader(Context context) {
+    if (imageLoader == null) {
+      imageLoader = new ImageLoader(context);
+    }
+    
+    return imageLoader;
+  }
+  
   // Loading Images ////////////////////////////////////////////////////////////////////////////////////////////////////
 
   /**
@@ -39,8 +46,8 @@ public class WebImage {
    * @param imageUrl URL to load the image from
    * @param listener Object which will be notified when the request is complete
    */
-  public static void load(final Context context, URL imageUrl, ImageRequest.Listener listener) {
-    ImageLoader.load(context, imageUrl, listener, null);
+  public static void load(Context context, String imageUrl, ImageRequest.Listener listener) {
+    load(context, new ImageRequest(imageUrl), listener);
   }
 
   /**
@@ -53,8 +60,20 @@ public class WebImage {
    * @param options Options to use when loading the image. See the documentation for {@link BitmapFactory.Options}
    * for more details. Can be null.
    */
-  public static void load(final Context context, URL imageUrl, ImageRequest.Listener listener, BitmapFactory.Options options) {
-    ImageLoader.load(context, imageUrl, listener, options);
+  public static void load(Context context, String imageUrl, ImageRequest.Listener listener, BitmapFactory.Options options) {
+    load(context, new ImageRequest(imageUrl, new StandardBitmapLoader(options)), listener);
+  }
+  
+  /**
+   * Load an image from URL to the given listener. This is a non-blocking call which is run in
+   * a background thread. It is safe to call this method multiple times; duplicate requests will
+   * be ignored.
+   * @param context Context used for getting app's package name
+   * @param request Image request
+   * @param listener Object which will be notified when the request is complete
+   */
+  public static void load(Context context, ImageRequest request, ImageRequest.Listener listener) {
+    getLoader(context).load(request, listener);
   }
 
   // Image Cache Operations ////////////////////////////////////////////////////////////////////////////////////////////
@@ -67,7 +86,7 @@ public class WebImage {
    * @param imageUrl URL to check
    * @return True if the image is in the file cache, false otherwise
    */
-  public static boolean isImageCached(final Context context, URL imageUrl) {
+  public static boolean isImageCached(Context context, String imageUrl) {
     return ImageCache.isImageCached(context, ImageCache.getCacheKeyForUrl(imageUrl));
   }
 
@@ -76,7 +95,7 @@ public class WebImage {
    * initialization to prevent the file cache from growing too large.
    * @param context Context used for getting app's package name
    */
-  public static void clearOldCacheFiles(final Context context) {
+  public static void clearOldCacheFiles(Context context) {
     ImageCache.clearOldCacheFiles(context);
   }
 
@@ -86,7 +105,7 @@ public class WebImage {
    * @param context Context used for getting app's package name
    * @param cacheAgeInSec Maximum age of file, in seconds
    */
-  public static void clearOldCacheFiles(final Context context, long cacheAgeInSec) {
+  public static void clearOldCacheFiles(Context context, long cacheAgeInSec) {
     ImageCache.clearOldCacheFiles(context, cacheAgeInSec);
   }
 
@@ -95,7 +114,7 @@ public class WebImage {
    * @param context Context used for getting app's package name
    * @param imageUrl Image URL to remove
    */
-  public static void clearImageFromCaches(final Context context, final URL imageUrl) {
+  public static void clearImageFromCaches(Context context, String imageUrl) {
     ImageCache.clearImageFromCaches(context, imageUrl);
   }
 
@@ -120,8 +139,8 @@ public class WebImage {
    * be other background threads for reading cached images, checking timestamps, etc.
    * @param value Number of threads
    */
-  public static void setMaxDownloadThreads(int value) {
-    DownloadThreadPool.setMaxThreads(value);
+  public static void setMaxDownloadThreads(Context context, int value) {
+    AdaptingThreadPoolExecutor.setMaxThreads(value);
   }
 
   // Thread Control Operations /////////////////////////////////////////////////////////////////////////////////////////
@@ -130,8 +149,8 @@ public class WebImage {
    * Cancel all pending requests. The parent activity should call this method when it is about
    * to be stopped or paused, or else you will waste resources by running in the background.
    */
-  public static void cancelAllRequests() {
-    ImageLoader.cancelAllRequests();
+  public static void cancelAllRequests(Context context) {
+    getLoader(context).cancelAllRequests();
   }
 
   /**
@@ -143,7 +162,7 @@ public class WebImage {
    * @param context Activity's context
    */
   public static void onNetworkStatusChanged(Context context) {
-    DownloadThreadPool.resizeThreadPool(context);
+    getLoader(context).getDownloadExecutor().resizeThreadPool();
   }
 
   /**
@@ -151,7 +170,7 @@ public class WebImage {
    * the app is paused to free up additional resources. Note that the next request to load an
    * image will re-inialize the thread pool.
    */
-  public static void shutdown() {
-    ImageLoader.shutdown();
+  public static void shutdown(Context context) {
+    getLoader(context).shutdown();
   }
 }

@@ -21,14 +21,13 @@
 
 package com.wrapp.android.webimage;
 
-import android.content.Context;
-import android.os.Environment;
-
 import java.io.File;
-import java.net.URL;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Date;
+
+import android.content.Context;
+import android.os.Environment;
 
 public class ImageCache {
   private static final long ONE_DAY_IN_SEC = 24 * 60 * 60;
@@ -144,9 +143,9 @@ public class ImageCache {
     return internalCacheDirectory;
   }
 
-  public static void clearImageFromCaches(final Context context, final URL imageUrl) {
+  public static void clearImageFromCaches(Context context, String imageUrl) {
     String imageKey = getCacheKeyForUrl(imageUrl);
-    final File cacheFile = new File(getCacheDirectory(context), imageKey);
+    File cacheFile = new File(getCacheDirectory(context), imageKey);
     if(cacheFile.exists()) {
       if(!cacheFile.delete()) {
         LogWrapper.logMessage("Could not remove cached version of image " + imageUrl);
@@ -210,13 +209,12 @@ public class ImageCache {
    * @param url Image URL
    * @return Hash for image URL
    */
-  public static String getCacheKeyForUrl(URL url) {
+  public static String getCacheKeyForUrl(String url) {
     String result = "";
 
     try {
-      String urlString = url.toString();
       MessageDigest digest = MessageDigest.getInstance("MD5");
-      digest.update(urlString.getBytes(), 0, urlString.length());
+      digest.update(url.getBytes(), 0, url.length());
       byte[] resultBytes = digest.digest();
       StringBuilder hexStringBuilder = new StringBuilder(2 * resultBytes.length);
       for(final byte b : resultBytes) {
