@@ -38,7 +38,7 @@ public class CheckTimeStampTask implements Runnable {
         WebImage.getLoader(context).forceUpdateImage(request);
       }
     } catch (IOException e) {
-      Log.e("WebImage", "Could not check timestamp", e);
+      LogWrapper.logException("Could not check timestamp", e);
     }
   }
 }

@@ -56,7 +56,7 @@ public class CallbackFuture<T> extends FutureTask<T> {
         });
       } catch (InterruptedException e) {
         // Should not be able to happend
-        Log.wtf("WebImage", "BL…", e);
+        LogWrapper.logException("get() was interrupted", e);
         
         throw new RuntimeException(e);
       }

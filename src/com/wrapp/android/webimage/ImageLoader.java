@@ -168,7 +168,7 @@ public class ImageLoader {
         return;
       }
       
-      Log.e("WebImage", "Failed to fetch image: " + request.imageUrl, t);
+      LogWrapper.logException("Failed to fetch image: " + request.imageUrl, t);
 
       for (ImageRequest.Listener listener : pendingRequests.getListeners(request)) {
         listener.onBitmapLoadError(t.getMessage());
