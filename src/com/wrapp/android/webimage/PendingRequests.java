@@ -78,7 +78,7 @@ class PendingRequests {
       task.future.cancel(false);
       
       // Notify that we were actually cancelled
-      for (ImageRequest.Listener listener : task.listeners) {
+      for (ImageRequest.Listener listener : task.getListeners()) {
         listener.onBitmapLoadCancelled();
       }
     }
@@ -104,16 +104,18 @@ class PendingRequests {
   private static class PendingTask {
     public Future<?> future;
     
-    private Set<ImageRequest.Listener> listeners;
+    // This is used as a Set but needs to be a Map because
+    // Collections.newSetFromMap() was only introduced in API 9
+    private Map<ImageRequest.Listener, Boolean> listeners;
     
     public PendingTask(Future<?> future) {
       this.future = future;
       
-      listeners = Collections.newSetFromMap(new WeakHashMap<ImageRequest.Listener, Boolean>());
+      listeners = new WeakHashMap<ImageRequest.Listener, Boolean>();
     }
     
     public void addListener(ImageRequest.Listener listener) {
-      listeners.add(listener);
+      listeners.put(listener, Boolean.TRUE);
     }
     
     /**
@@ -139,7 +141,7 @@ class PendingRequests {
     }
     
     public Set<ImageRequest.Listener> getListeners() {
-      return listeners;
+      return listeners.keySet();
     }
   }
 }
