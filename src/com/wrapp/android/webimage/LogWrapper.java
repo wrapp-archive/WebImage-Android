@@ -38,19 +38,16 @@ public class LogWrapper {
       Log.println(level, tag, message);
     }
   }
+  
 
-  public static final void logException(Exception exception) {
+
+  public static void logException(Throwable t) {
+    logException("Exception thrown", t);
+  }
+  
+  public static void logException(String message, Throwable t) {
     if(tag != null) {
-      StackTraceElement[] stackTraceElements = exception.getStackTrace();
-      for(int i = 0; i < stackTraceElements.length; i++) {
-        StackTraceElement element = stackTraceElements[i];
-        if(element.getClassName().contains(ImageLoader.class.getSimpleName())) {
-          String message = exception.getClass().getSimpleName() + " at " + element.getFileName() + ":" +
-            element.getLineNumber() + ": " + exception.getMessage();
-          Log.println(Log.ERROR, tag, message);
-          break;
-        }
-      }
+      Log.e(tag, message, t);
     }
   }
 }
