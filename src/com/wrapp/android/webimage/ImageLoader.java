@@ -7,7 +7,6 @@ import java.util.concurrent.TimeUnit;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.os.Handler;
-import android.util.Log;
 
 import com.wrapp.android.webimage.DispatchTask.NextTask;
 

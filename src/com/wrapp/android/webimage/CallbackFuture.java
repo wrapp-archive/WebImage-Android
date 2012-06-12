@@ -5,7 +5,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
 
 import android.os.Handler;
-import android.util.Log;
 
 public class CallbackFuture<T> extends FutureTask<T> {
   public interface Callback<T> {

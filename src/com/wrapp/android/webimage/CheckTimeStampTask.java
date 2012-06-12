@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.util.Date;
 
 import android.content.Context;
-import android.util.Log;
 
 public class CheckTimeStampTask implements Runnable {
   private Context context;

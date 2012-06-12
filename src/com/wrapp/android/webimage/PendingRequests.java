@@ -1,6 +1,5 @@
 package com.wrapp.android.webimage;
 
-import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 import java.util.WeakHashMap;
